@@ -1,7 +1,11 @@
 /**
  * めしガチャ — 現在地周辺の外食店をランダム選択
  */
-import { isOpenNow, openStatusLabel } from "./opening-hours.js";
+import {
+  isOpenNow,
+  openStatusLabel,
+  formatOpeningHours,
+} from "./opening-hours.js";
 import {
   getHistory,
   pushHistory,
@@ -17,6 +21,8 @@ const OVERPASS_ENDPOINTS = [
   "https://overpass.kumi.systems/api/interpreter",
 ];
 
+const MEAL_EXCLUDE_AMENITIES = new Set(["bar", "pub", "biergarten"]);
+
 const AMENITY_LABELS = {
   restaurant: "レストラン",
   cafe: "カフェ",
@@ -27,6 +33,18 @@ const AMENITY_LABELS = {
   biergarten: "ビアガーデン",
   ice_cream: "アイス",
   bakery: "ベーカリー",
+};
+
+const AMENITY_ICONS = {
+  restaurant: "restaurant",
+  cafe: "local_cafe",
+  fast_food: "fastfood",
+  food_court: "food_bank",
+  bar: "local_bar",
+  pub: "sports_bar",
+  biergarten: "nightlife",
+  ice_cream: "icecream",
+  bakery: "bakery_dining",
 };
 
 const CUISINE_LABELS = {
@@ -53,6 +71,9 @@ const CUISINE_LABELS = {
   ice_cream: "アイス",
   bakery: "ベーカリー",
 };
+
+/** 徒歩速度の目安（m/分） */
+const WALK_SPEED_MPM = 80;
 
 /**
  * @typedef {{
@@ -85,27 +106,40 @@ const state = {
   rolling: false,
   fromCache: false,
   dataSource: "osm",
+  mealOnly: true,
+  /** @type {string} */
+  category: "all",
+  /** @type {AbortController | null} */
+  searchAbort: null,
+  searchToken: 0,
 };
 
 /** @type {HTMLElement | null} */
 let lastFocus = null;
 /** @type {((e: KeyboardEvent) => void) | null} */
 let trapHandler = null;
+/** @type {ReturnType<typeof setTimeout> | null} */
+let toastTimer = null;
 
 const els = {
   main: /** @type {HTMLElement} */ (document.getElementById("main")),
+  topBar: /** @type {HTMLElement} */ (document.getElementById("topBar")),
   offlineBanner: /** @type {HTMLElement} */ (document.getElementById("offlineBanner")),
+  backBtn: /** @type {HTMLButtonElement} */ (document.getElementById("backBtn")),
   historyBtn: /** @type {HTMLButtonElement} */ (document.getElementById("historyBtn")),
+  settingsBtn: /** @type {HTMLButtonElement} */ (document.getElementById("settingsBtn")),
   refreshBtn: /** @type {HTMLButtonElement} */ (document.getElementById("refreshBtn")),
   startBtn: /** @type {HTMLButtonElement} */ (document.getElementById("startBtn")),
   homeHint: /** @type {HTMLElement} */ (document.getElementById("homeHint")),
   loadingText: /** @type {HTMLElement} */ (document.getElementById("loadingText")),
   loadingSub: /** @type {HTMLElement} */ (document.getElementById("loadingSub")),
+  categoryChips: /** @type {HTMLElement} */ (document.getElementById("categoryChips")),
   listMeta: /** @type {HTMLElement} */ (document.getElementById("listMeta")),
   restaurantList: /** @type {HTMLElement} */ (document.getElementById("restaurantList")),
   emptyState: /** @type {HTMLElement} */ (document.getElementById("emptyState")),
   emptyBody: /** @type {HTMLElement} */ (document.getElementById("emptyBody")),
   expandRadiusBtn: /** @type {HTMLButtonElement} */ (document.getElementById("expandRadiusBtn")),
+  resetFiltersBtn: /** @type {HTMLButtonElement} */ (document.getElementById("resetFiltersBtn")),
   emptyRetryBtn: /** @type {HTMLButtonElement} */ (document.getElementById("emptyRetryBtn")),
   errorTitle: /** @type {HTMLElement} */ (document.getElementById("errorTitle")),
   errorBody: /** @type {HTMLElement} */ (document.getElementById("errorBody")),
@@ -120,11 +154,14 @@ const els = {
   resultName: /** @type {HTMLElement} */ (document.getElementById("resultName")),
   resultMeta: /** @type {HTMLElement} */ (document.getElementById("resultMeta")),
   resultCuisine: /** @type {HTMLElement} */ (document.getElementById("resultCuisine")),
+  resultHours: /** @type {HTMLElement} */ (document.getElementById("resultHours")),
   resultStatus: /** @type {HTMLElement} */ (document.getElementById("resultStatus")),
   resultLive: /** @type {HTMLElement} */ (document.getElementById("resultLive")),
   slot: /** @type {HTMLElement} */ (document.getElementById("slot")),
   slotReel: /** @type {HTMLElement} */ (document.getElementById("slotReel")),
+  shareBtn: /** @type {HTMLButtonElement} */ (document.getElementById("shareBtn")),
   walkLink: /** @type {HTMLAnchorElement} */ (document.getElementById("walkLink")),
+  walkLabel: /** @type {HTMLElement} */ (document.getElementById("walkLabel")),
   mapLink: /** @type {HTMLAnchorElement} */ (document.getElementById("mapLink")),
   phoneLink: /** @type {HTMLAnchorElement} */ (document.getElementById("phoneLink")),
   phoneLabel: /** @type {HTMLElement} */ (document.getElementById("phoneLabel")),
@@ -137,6 +174,11 @@ const els = {
   historyEmpty: /** @type {HTMLElement} */ (document.getElementById("historyEmpty")),
   clearHistoryBtn: /** @type {HTMLButtonElement} */ (document.getElementById("clearHistoryBtn")),
   closeHistoryBtn: /** @type {HTMLButtonElement} */ (document.getElementById("closeHistoryBtn")),
+  settingsSheet: /** @type {HTMLElement} */ (document.getElementById("settingsSheet")),
+  autoStartToggle: /** @type {HTMLInputElement} */ (document.getElementById("autoStartToggle")),
+  mealOnlyToggle: /** @type {HTMLInputElement} */ (document.getElementById("mealOnlyToggle")),
+  closeSettingsBtn: /** @type {HTMLButtonElement} */ (document.getElementById("closeSettingsBtn")),
+  toast: /** @type {HTMLElement} */ (document.getElementById("toast")),
 };
 
 function prefersReducedMotion() {
@@ -151,23 +193,37 @@ function vibrate(pattern = [12, 30, 18]) {
   }
 }
 
+function showToast(message) {
+  els.toast.textContent = message;
+  els.toast.hidden = false;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    els.toast.hidden = true;
+  }, 2200);
+}
+
 function showScreen(name) {
   document.querySelectorAll("[data-screen]").forEach((el) => {
     el.hidden = /** @type {HTMLElement} */ (el).dataset.screen !== name;
   });
 
   const showListChrome = name === "list";
+  const showBack = name === "list" || name === "error" || name === "loading";
   els.refreshBtn.hidden = !showListChrome;
+  els.backBtn.hidden = !showBack;
+  els.topBar.classList.toggle("has-back", showBack);
   updateBottomBar();
 }
 
 function updateBottomBar() {
-  const listVisible =
-    document.querySelector('[data-screen="list"]') &&
-    !/** @type {HTMLElement} */ (document.querySelector('[data-screen="list"]')).hidden;
+  const listEl = /** @type {HTMLElement | null} */ (
+    document.querySelector('[data-screen="list"]')
+  );
+  const listVisible = Boolean(listEl && !listEl.hidden);
   const hasPool = getFilteredRestaurants({ includeExcluded: false }).length > 0;
   els.bottomBar.hidden = !(listVisible && hasPool);
   els.main.classList.toggle("has-bottom-bar", !els.bottomBar.hidden);
+  els.gachaBtn.disabled = state.rolling || !hasPool;
 }
 
 function getSelectedRadius() {
@@ -196,8 +252,17 @@ function formatDistance(meters) {
   return `${(meters / 1000).toFixed(1)}km`;
 }
 
+function formatWalkMinutes(meters) {
+  const mins = Math.max(1, Math.round(meters / WALK_SPEED_MPM));
+  return `徒歩約${mins}分`;
+}
+
 function labelAmenity(amenity) {
   return AMENITY_LABELS[amenity] ?? "飲食店";
+}
+
+function iconAmenity(amenity) {
+  return AMENITY_ICONS[amenity] ?? "restaurant";
 }
 
 function labelCuisine(cuisine) {
@@ -269,9 +334,10 @@ function geolocationErrorMessage(err) {
  * @param {number} lat
  * @param {number} lon
  * @param {number} radius
+ * @param {AbortSignal} [signal]
  * @returns {Promise<Restaurant[]>}
  */
-async function fetchNearbyRestaurants(lat, lon, radius) {
+async function fetchNearbyRestaurants(lat, lon, radius, signal) {
   const query = `
 [out:json][timeout:25];
 (
@@ -284,27 +350,39 @@ out center tags;
   let lastError = /** @type {Error | null} */ (null);
 
   for (const endpoint of OVERPASS_ENDPOINTS) {
+    if (signal?.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
     try {
       const controller = new AbortController();
+      const onAbort = () => controller.abort();
+      signal?.addEventListener("abort", onAbort, { once: true });
       const timer = setTimeout(() => controller.abort(), 28000);
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-        },
-        body: new URLSearchParams({ data: query }),
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          },
+          body: new URLSearchParams({ data: query }),
+          signal: controller.signal,
+        });
 
-      if (!response.ok) {
-        lastError = new Error(`店舗検索に失敗しました（HTTP ${response.status}）`);
-        continue;
+        if (!response.ok) {
+          lastError = new Error(`店舗検索に失敗しました（HTTP ${response.status}）`);
+          continue;
+        }
+
+        const data = await response.json();
+        return parseOverpassElements(data.elements ?? [], lat, lon);
+      } finally {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", onAbort);
       }
-
-      const data = await response.json();
-      return parseOverpassElements(data.elements ?? [], lat, lon);
     } catch (err) {
+      if (/** @type {Error} */ (err)?.name === "AbortError" && signal?.aborted) {
+        throw err;
+      }
       lastError = /** @type {Error} */ (err);
     }
   }
@@ -378,6 +456,8 @@ function getFilteredRestaurants({ includeExcluded = false } = {}) {
     .filter((shop) => {
       if (!includeExcluded && state.excludedIds.has(shop.id)) return false;
       if (shop.openNow === false) return false;
+      if (state.mealOnly && MEAL_EXCLUDE_AMENITIES.has(shop.amenity)) return false;
+      if (state.category !== "all" && shop.amenity !== state.category) return false;
       return true;
     })
     .sort((a, b) => {
@@ -388,19 +468,78 @@ function getFilteredRestaurants({ includeExcluded = false } = {}) {
     });
 }
 
+function getAvailableCategories() {
+  const counts = new Map();
+  for (const shop of state.restaurants) {
+    if (shop.openNow === false) continue;
+    if (state.mealOnly && MEAL_EXCLUDE_AMENITIES.has(shop.amenity)) continue;
+    counts.set(shop.amenity, (counts.get(shop.amenity) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || labelAmenity(a[0]).localeCompare(labelAmenity(b[0]), "ja"))
+    .map(([amenity, count]) => ({ amenity, count }));
+}
+
+function renderCategoryChips() {
+  const cats = getAvailableCategories();
+  const total = cats.reduce((sum, c) => sum + c.count, 0);
+  if (state.category !== "all" && !cats.some((c) => c.amenity === state.category)) {
+    state.category = "all";
+  }
+
+  els.categoryChips.innerHTML = "";
+  if (total === 0) {
+    els.categoryChips.hidden = true;
+    return;
+  }
+  els.categoryChips.hidden = false;
+
+  const frag = document.createDocumentFragment();
+  const makeChip = (value, label) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chip";
+    btn.role = "radio";
+    btn.dataset.category = value;
+    btn.setAttribute("aria-checked", state.category === value ? "true" : "false");
+    btn.classList.toggle("is-selected", state.category === value);
+    btn.textContent = label;
+    btn.addEventListener("click", () => {
+      if (state.category === value) return;
+      state.category = value;
+      renderList();
+    });
+    frag.appendChild(btn);
+  };
+
+  makeChip("all", `すべて (${total})`);
+  for (const { amenity, count } of cats) {
+    makeChip(amenity, `${labelAmenity(amenity)} (${count})`);
+  }
+  els.categoryChips.appendChild(frag);
+}
+
 function renderList() {
+  renderCategoryChips();
   const filtered = getFilteredRestaurants({ includeExcluded: true });
   const active = filtered.filter((s) => !state.excludedIds.has(s.id));
   const total = state.restaurants.length;
   const closedCount = state.restaurants.filter((s) => s.openNow === false).length;
+  const mealFilteredCount = state.mealOnly
+    ? state.restaurants.filter(
+        (s) => s.openNow !== false && MEAL_EXCLUDE_AMENITIES.has(s.amenity)
+      ).length
+    : 0;
+  const excludedManual = state.excludedIds.size;
 
   const cacheNote = state.fromCache ? " · キャッシュ" : "";
-  els.listMeta.textContent =
-    total > 0
-      ? `${formatDistance(state.radius)} · ${active.length}件（営業時間外 ${closedCount}件を除外）${cacheNote}`
-      : "";
+  const parts = [`${formatDistance(state.radius)}`, `${active.length}件`];
+  if (closedCount > 0) parts.push(`時間外 ${closedCount}`);
+  if (mealFilteredCount > 0) parts.push(`バー等 ${mealFilteredCount}`);
+  if (excludedManual > 0) parts.push(`除外 ${excludedManual}`);
+  els.listMeta.textContent = total > 0 ? `${parts.join(" · ")}${cacheNote}` : "";
 
-  const canExpand = state.radius < 2000;
+  const canExpand = state.radius < 3000;
 
   els.emptyState.hidden = active.length > 0;
   els.restaurantList.hidden = active.length === 0;
@@ -409,11 +548,25 @@ function renderList() {
     if (total > 0 && closedCount === total) {
       els.emptyBody.textContent =
         "取得したお店はすべて営業時間外のようです。半径を広げてみてください。";
+    } else if (total > 0 && state.category !== "all") {
+      els.emptyBody.textContent =
+        "このカテゴリでは候補がありません。フィルタを変えてみてください。";
+    } else if (total > 0 && state.mealOnly && mealFilteredCount > 0) {
+      els.emptyBody.textContent =
+        "食事向きのお店が見つかりませんでした。設定でバー・パブを含めるか、半径を広げてください。";
     } else {
       els.emptyBody.textContent =
         "この範囲ではお店が見つかりませんでした。半径を広げて再検索できます。";
     }
     els.expandRadiusBtn.hidden = !canExpand;
+    els.expandRadiusBtn.textContent = "3km で再検索";
+    els.resetFiltersBtn.hidden = !(
+      state.category !== "all" ||
+      state.excludedIds.size > 0 ||
+      (state.mealOnly && mealFilteredCount > 0 && total > closedCount)
+    );
+  } else {
+    els.resetFiltersBtn.hidden = true;
   }
 
   els.restaurantList.innerHTML = "";
@@ -430,10 +583,10 @@ function renderList() {
     if (shop.id === state.lastPickedId) btn.classList.add("is-picked");
 
     const cuisine = labelCuisine(shop.cuisine);
-    const status = openStatusLabel(shop.openNow);
+    const status = openStatusLabel(shop.openNow, { includeUnknown: true });
     btn.innerHTML = `
       <span class="restaurant-item__icon" aria-hidden="true">
-        <span class="material-symbols-outlined">restaurant</span>
+        <span class="material-symbols-outlined"></span>
       </span>
       <span class="restaurant-item__body">
         <p class="restaurant-item__name"></p>
@@ -444,10 +597,13 @@ function renderList() {
         <span class="badge" hidden></span>
       </span>
     `;
+    btn.querySelector(".material-symbols-outlined").textContent = iconAmenity(
+      shop.amenity
+    );
     btn.querySelector(".restaurant-item__name").textContent = shop.name;
     btn.querySelector(".restaurant-item__sub").textContent = cuisine
       ? `${labelAmenity(shop.amenity)} · ${cuisine}`
-      : labelAmenity(shop.amenity);
+      : `${labelAmenity(shop.amenity)} · ${formatWalkMinutes(shop.distance)}`;
     btn.querySelector(".restaurant-item__dist").textContent = formatDistance(
       shop.distance
     );
@@ -456,6 +612,7 @@ function renderList() {
       badge.hidden = false;
       badge.textContent = status;
       badge.classList.toggle("badge--closed", shop.openNow === false);
+      badge.classList.toggle("badge--unknown", shop.openNow == null);
     }
 
     btn.addEventListener("click", () => openResult(shop, { animate: false }));
@@ -483,6 +640,27 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+/**
+ * 近い店ほど当たりやすい重み付き抽選
+ * @param {Restaurant[]} list
+ */
+function weightedPick(list) {
+  if (list.length === 0) return null;
+  if (list.length === 1) return list[0];
+
+  const weights = list.map((shop) => {
+    const meters = Math.max(50, shop.distance);
+    return 1 / Math.sqrt(meters);
+  });
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < list.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return list[i];
+  }
+  return list[list.length - 1];
+}
+
 function pickRandomRestaurant() {
   const list = getFilteredRestaurants({ includeExcluded: false });
   if (list.length === 0) return null;
@@ -490,7 +668,7 @@ function pickRandomRestaurant() {
 
   const others = list.filter((r) => r.id !== state.lastPickedId);
   const pool = others.length > 0 ? others : list;
-  return pool[Math.floor(Math.random() * pool.length)];
+  return weightedPick(pool);
 }
 
 function getFocusable(container) {
@@ -552,11 +730,22 @@ function openOverlay(sheet) {
 function closeAllSheets() {
   els.resultSheet.hidden = true;
   els.historySheet.hidden = true;
+  els.settingsSheet.hidden = true;
   els.scrim.hidden = true;
   els.scrim.setAttribute("aria-hidden", "true");
   els.resultCard.classList.remove("is-rolling", "is-reveal");
   els.slot.hidden = true;
   releaseFocusTrap();
+}
+
+function setRollingUi(rolling) {
+  state.rolling = rolling;
+  els.againBtn.disabled = rolling;
+  els.excludeBtn.disabled = rolling;
+  els.closeSheetBtn.disabled = rolling;
+  els.shareBtn.disabled = rolling;
+  els.gachaBtn.disabled = rolling;
+  updateBottomBar();
 }
 
 async function runSlotAnimation(names, finalName) {
@@ -596,7 +785,7 @@ async function runSlotAnimation(names, finalName) {
  */
 async function openResult(shop, { animate = true } = {}) {
   if (state.rolling) return;
-  state.rolling = true;
+  setRollingUi(true);
   state.currentResult = shop;
   state.lastPickedId = shop.id;
 
@@ -608,19 +797,26 @@ async function openResult(shop, { animate = true } = {}) {
     ?.classList.add("is-picked");
 
   els.historySheet.hidden = true;
+  els.settingsSheet.hidden = true;
   openOverlay(els.resultSheet);
 
   const cuisine = labelCuisine(shop.cuisine);
   els.resultCuisine.hidden = !cuisine;
   els.resultCuisine.textContent = cuisine;
 
-  const status = openStatusLabel(shop.openNow);
+  const hours = formatOpeningHours(shop.openingHours);
+  els.resultHours.hidden = !hours;
+  els.resultHours.textContent = hours ? `営業時間: ${hours}` : "";
+
+  const status = openStatusLabel(shop.openNow, { includeUnknown: true });
   els.resultStatus.hidden = !status;
   els.resultStatus.textContent = status;
   els.resultStatus.classList.toggle("is-open", shop.openNow === true);
   els.resultStatus.classList.toggle("is-closed", shop.openNow === false);
+  els.resultStatus.classList.toggle("is-unknown", shop.openNow == null);
 
   els.walkLink.href = walkUrl(shop);
+  els.walkLabel.textContent = `徒歩ルート（${formatWalkMinutes(shop.distance)}）`;
   els.mapLink.href = mapsUrl(shop);
 
   if (shop.phone) {
@@ -649,13 +845,14 @@ async function openResult(shop, { animate = true } = {}) {
     const names = pool.map((r) => r.name);
     await runSlotAnimation(names.length ? names : [shop.name], shop.name);
     els.resultCard.classList.remove("is-rolling");
+    els.slot.hidden = true;
     vibrate([20, 30, 40]);
   } else {
     els.slot.hidden = true;
   }
 
   els.resultName.textContent = shop.name;
-  els.resultMeta.textContent = `${labelAmenity(shop.amenity)} · ${formatDistance(shop.distance)}`;
+  els.resultMeta.textContent = `${labelAmenity(shop.amenity)} · ${formatDistance(shop.distance)} · ${formatWalkMinutes(shop.distance)}`;
   els.resultCard.classList.add("is-reveal");
   els.resultLive.textContent = `選ばれたお店は ${shop.name} です。`;
 
@@ -669,13 +866,44 @@ async function openResult(shop, { animate = true } = {}) {
     distance: shop.distance,
   });
 
-  state.rolling = false;
+  setRollingUi(false);
 }
 
 function closeResult() {
   if (state.rolling) return;
   closeAllSheets();
   state.currentResult = null;
+}
+
+async function shareResult() {
+  const shop = state.currentResult;
+  if (!shop || state.rolling) return;
+
+  const text = [
+    `めしガチャの結果: ${shop.name}`,
+    `${labelAmenity(shop.amenity)} · ${formatDistance(shop.distance)}（${formatWalkMinutes(shop.distance)}）`,
+    mapsUrl(shop),
+  ].join("\n");
+
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: "めしガチャ",
+        text: `めしガチャの結果: ${shop.name}`,
+        url: mapsUrl(shop),
+      });
+      return;
+    }
+  } catch (err) {
+    if (/** @type {Error} */ (err)?.name === "AbortError") return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("結果をコピーしました");
+  } catch {
+    showToast("シェアに失敗しました");
+  }
 }
 
 function openHistory() {
@@ -719,7 +947,17 @@ function openHistory() {
   }
 
   els.resultSheet.hidden = true;
+  els.settingsSheet.hidden = true;
   openOverlay(els.historySheet);
+}
+
+function openSettings() {
+  const prefs = getPrefs();
+  els.autoStartToggle.checked = prefs.autoStart !== false;
+  els.mealOnlyToggle.checked = state.mealOnly;
+  els.resultSheet.hidden = true;
+  els.historySheet.hidden = true;
+  openOverlay(els.settingsSheet);
 }
 
 function showError(title, body, { offline = false } = {}) {
@@ -727,6 +965,13 @@ function showError(title, body, { offline = false } = {}) {
   els.errorBody.textContent = body;
   els.errorIcon.textContent = offline ? "wifi_off" : "error";
   showScreen("error");
+}
+
+function goHome() {
+  state.searchAbort?.abort();
+  state.searchAbort = null;
+  closeAllSheets();
+  showScreen("home");
 }
 
 /**
@@ -746,6 +991,7 @@ async function runSearch({ forceRefresh = false, radiusOverride } = {}) {
   state.excludedIds = new Set();
   state.lastPickedId = null;
   state.fromCache = false;
+  state.category = "all";
 
   if (!navigator.onLine) {
     showError(
@@ -756,12 +1002,18 @@ async function runSearch({ forceRefresh = false, radiusOverride } = {}) {
     return;
   }
 
+  state.searchAbort?.abort();
+  const controller = new AbortController();
+  state.searchAbort = controller;
+  const token = ++state.searchToken;
+
   showScreen("loading");
   els.loadingText.textContent = "現在地を取得しています…";
   els.loadingSub.hidden = true;
 
   try {
     const position = await getCurrentPosition();
+    if (token !== state.searchToken) return;
     state.coords = position.coords;
     const { latitude, longitude } = state.coords;
 
@@ -787,13 +1039,19 @@ async function runSearch({ forceRefresh = false, radiusOverride } = {}) {
     const restaurants = await fetchNearbyRestaurants(
       latitude,
       longitude,
-      state.radius
+      state.radius,
+      controller.signal
     );
+    if (token !== state.searchToken) return;
     state.restaurants = restaurants;
     writeSearchCache(latitude, longitude, state.radius, restaurants);
     renderList();
     showScreen("list");
   } catch (err) {
+    if (token !== state.searchToken) return;
+    if (/** @type {Error} */ (err)?.name === "AbortError" && controller.signal.aborted) {
+      return;
+    }
     console.error(err);
     if (err && typeof err.code === "number") {
       showError("位置情報が必要です", geolocationErrorMessage(err));
@@ -814,10 +1072,13 @@ async function runSearch({ forceRefresh = false, radiusOverride } = {}) {
         `${err?.message ?? "しばらくしてからもう一度お試しください。"}\n別のサーバーでも試しましたが取得できませんでした。`
       );
     }
+  } finally {
+    if (state.searchAbort === controller) state.searchAbort = null;
   }
 }
 
 async function onGacha() {
+  if (state.rolling) return;
   const shop = pickRandomRestaurant();
   if (!shop) return;
   await openResult(shop, { animate: true });
@@ -830,9 +1091,21 @@ async function onExcludeAndAgain() {
   const next = pickRandomRestaurant();
   if (!next) {
     closeResult();
+    showToast("候補がなくなりました");
     return;
   }
   await openResult(next, { animate: true });
+}
+
+function resetFilters() {
+  state.category = "all";
+  state.excludedIds = new Set();
+  if (state.mealOnly) {
+    state.mealOnly = false;
+    savePrefs({ mealOnly: false });
+    els.mealOnlyToggle.checked = false;
+  }
+  renderList();
 }
 
 function updateOnlineBanner() {
@@ -868,7 +1141,11 @@ function registerServiceWorker() {
 function initPrefsUi() {
   const prefs = getPrefs();
   state.radius = prefs.radius ?? 1000;
+  if (![500, 1000, 2000, 3000].includes(state.radius)) state.radius = 1000;
+  state.mealOnly = prefs.mealOnly !== false;
   setRadiusInput(state.radius);
+  els.autoStartToggle.checked = prefs.autoStart !== false;
+  els.mealOnlyToggle.checked = state.mealOnly;
 }
 
 function init() {
@@ -878,16 +1155,19 @@ function init() {
 
   els.startBtn.addEventListener("click", () => runSearch({ forceRefresh: true }));
   els.refreshBtn.addEventListener("click", () => runSearch({ forceRefresh: true }));
-  els.emptyRetryBtn.addEventListener("click", () => showScreen("home"));
-  els.errorHomeBtn.addEventListener("click", () => showScreen("home"));
+  els.backBtn.addEventListener("click", goHome);
+  els.emptyRetryBtn.addEventListener("click", goHome);
+  els.errorHomeBtn.addEventListener("click", goHome);
   els.errorRetryBtn.addEventListener("click", () => runSearch({ forceRefresh: true }));
   els.expandRadiusBtn.addEventListener("click", () =>
-    runSearch({ forceRefresh: true, radiusOverride: 2000 })
+    runSearch({ forceRefresh: true, radiusOverride: 3000 })
   );
+  els.resetFiltersBtn.addEventListener("click", resetFilters);
 
   els.gachaBtn.addEventListener("click", onGacha);
   els.againBtn.addEventListener("click", onGacha);
   els.excludeBtn.addEventListener("click", onExcludeAndAgain);
+  els.shareBtn.addEventListener("click", shareResult);
   els.closeSheetBtn.addEventListener("click", closeResult);
   els.scrim.addEventListener("click", () => {
     if (state.rolling) return;
@@ -897,8 +1177,24 @@ function init() {
   els.historyBtn.addEventListener("click", openHistory);
   els.closeHistoryBtn.addEventListener("click", closeAllSheets);
   els.clearHistoryBtn.addEventListener("click", () => {
+    if (!window.confirm("ガチャ履歴をすべて削除しますか？")) return;
     clearHistory();
     openHistory();
+    showToast("履歴を削除しました");
+  });
+
+  els.settingsBtn.addEventListener("click", openSettings);
+  els.closeSettingsBtn.addEventListener("click", closeAllSheets);
+  els.autoStartToggle.addEventListener("change", () => {
+    savePrefs({ autoStart: els.autoStartToggle.checked });
+  });
+  els.mealOnlyToggle.addEventListener("change", () => {
+    state.mealOnly = els.mealOnlyToggle.checked;
+    savePrefs({ mealOnly: state.mealOnly });
+    const listEl = /** @type {HTMLElement | null} */ (
+      document.querySelector('[data-screen="list"]')
+    );
+    if (listEl && !listEl.hidden) renderList();
   });
 
   document.querySelectorAll('input[name="radius"]').forEach((input) => {
@@ -916,9 +1212,13 @@ function init() {
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !els.resultSheet.hidden && !state.rolling) {
+    if (e.key === "Escape" && state.rolling) return;
+    if (e.key === "Escape" && !els.resultSheet.hidden) {
       closeResult();
-    } else if (e.key === "Escape" && !els.historySheet.hidden) {
+    } else if (
+      e.key === "Escape" &&
+      (!els.historySheet.hidden || !els.settingsSheet.hidden)
+    ) {
       closeAllSheets();
     }
   });

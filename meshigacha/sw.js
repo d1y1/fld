@@ -1,4 +1,4 @@
-const CACHE = "meshigacha-v1";
+const CACHE = "meshigacha-v2";
 const ASSETS = [
   "./",
   "./index.html",

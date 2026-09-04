@@ -123,6 +123,7 @@ let toastTimer = null;
 
 const els = {
   main: /** @type {HTMLElement} */ (document.getElementById("main")),
+  topBar: /** @type {HTMLElement} */ (document.getElementById("topBar")),
   offlineBanner: /** @type {HTMLElement} */ (document.getElementById("offlineBanner")),
   backBtn: /** @type {HTMLButtonElement} */ (document.getElementById("backBtn")),
   historyBtn: /** @type {HTMLButtonElement} */ (document.getElementById("historyBtn")),
@@ -207,8 +208,10 @@ function showScreen(name) {
   });
 
   const showListChrome = name === "list";
+  const showBack = name === "list" || name === "error" || name === "loading";
   els.refreshBtn.hidden = !showListChrome;
-  els.backBtn.hidden = !(name === "list" || name === "error" || name === "loading");
+  els.backBtn.hidden = !showBack;
+  els.topBar.classList.toggle("has-back", showBack);
   updateBottomBar();
 }
 
@@ -842,6 +845,7 @@ async function openResult(shop, { animate = true } = {}) {
     const names = pool.map((r) => r.name);
     await runSlotAnimation(names.length ? names : [shop.name], shop.name);
     els.resultCard.classList.remove("is-rolling");
+    els.slot.hidden = true;
     vibrate([20, 30, 40]);
   } else {
     els.slot.hidden = true;

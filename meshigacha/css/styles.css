@@ -154,6 +154,10 @@ body:has(.offline-banner:not([hidden])) .top-app-bar {
   gap: 4px;
 }
 
+.top-app-bar:not(.has-back) .top-app-bar__row {
+  padding-left: 16px;
+}
+
 .top-app-bar__title {
   margin: 0;
   flex: 1;
@@ -164,8 +168,10 @@ body:has(.offline-banner:not([hidden])) .top-app-bar {
   line-height: 1.3;
 }
 
-.top-app-bar__row:not(:has(#backBtn:not([hidden]))) .top-app-bar__title {
-  padding-left: 12px;
+.icon-btn[hidden],
+#backBtn[hidden],
+#refreshBtn[hidden] {
+  display: none !important;
 }
 
 .top-app-bar__actions {
@@ -848,15 +854,21 @@ body:has(.offline-banner:not([hidden])) .top-app-bar {
   font-weight: 500;
 }
 
-.sheet__links,
+.sheet__links {
+  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.sheet__links > .btn--block:first-child {
+  grid-column: 1 / -1;
+}
+
 .sheet__actions {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.sheet__links {
-  margin-bottom: 12px;
 }
 
 .slot {

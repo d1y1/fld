@@ -27,10 +27,11 @@
     />
     <meta
       property="og:image"
-      content="https://d1y1.github.io/meshigacha/icons/og.png"
+      content="https://d1y1.github.io/fld/meshigacha/icons/og.png"
     />
-    <meta property="og:url" content="https://d1y1.github.io/meshigacha/" />
+    <meta property="og:url" content="https://d1y1.github.io/fld/meshigacha/" />
     <meta property="og:locale" content="ja_JP" />
+    <link rel="canonical" href="https://d1y1.github.io/fld/meshigacha/" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="めしガチャ" />
     <meta
@@ -39,7 +40,7 @@
     />
     <meta
       name="twitter:image"
-      content="https://d1y1.github.io/meshigacha/icons/og.png"
+      content="https://d1y1.github.io/fld/meshigacha/icons/og.png"
     />
 
     <title>めしガチャ</title>
@@ -63,7 +64,18 @@
     <div class="app" id="app">
       <header class="top-app-bar" id="topBar">
         <div class="top-app-bar__row">
-          <h1 class="top-app-bar__title">めしガチャ</h1>
+          <button
+            type="button"
+            class="icon-btn"
+            id="backBtn"
+            aria-label="戻る"
+            hidden
+          >
+            <span class="material-symbols-outlined" aria-hidden="true"
+              >arrow_back</span
+            >
+          </button>
+          <h1 class="top-app-bar__title" id="topTitle">めしガチャ</h1>
           <div class="top-app-bar__actions">
             <button
               type="button"
@@ -73,6 +85,16 @@
             >
               <span class="material-symbols-outlined" aria-hidden="true"
                 >history</span
+              >
+            </button>
+            <button
+              type="button"
+              class="icon-btn"
+              id="settingsBtn"
+              aria-label="設定"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true"
+                >settings</span
               >
             </button>
             <button
@@ -147,7 +169,7 @@
           <div class="filters" id="filters">
             <label class="field">
               <span class="field__label">検索半径</span>
-              <div class="segmented" role="radiogroup" aria-label="検索半径">
+              <div class="segmented segmented--4" role="radiogroup" aria-label="検索半径">
                 <label class="segmented__item">
                   <input type="radio" name="radius" value="500" />
                   <span>500m</span>
@@ -160,9 +182,24 @@
                   <input type="radio" name="radius" value="2000" />
                   <span>2km</span>
                 </label>
+                <label class="segmented__item">
+                  <input type="radio" name="radius" value="3000" />
+                  <span>3km</span>
+                </label>
               </div>
             </label>
-            <p class="filters__note">営業中のお店のみ表示（営業時間外は除外）</p>
+            <div class="field">
+              <span class="field__label">カテゴリ</span>
+              <div
+                class="chip-row"
+                id="categoryChips"
+                role="radiogroup"
+                aria-label="カテゴリ"
+              ></div>
+            </div>
+            <p class="filters__note">
+              営業時間外は除外。時間が不明なお店は候補に含めます。
+            </p>
           </div>
 
           <div class="list-meta" id="listMeta"></div>
@@ -183,7 +220,15 @@
                 id="expandRadiusBtn"
                 hidden
               >
-                2km で再検索
+                3km で再検索
+              </button>
+              <button
+                type="button"
+                class="btn btn--tonal"
+                id="resetFiltersBtn"
+                hidden
+              >
+                フィルタを解除
               </button>
               <button type="button" class="btn btn--text" id="emptyRetryBtn">
                 最初に戻る
@@ -256,11 +301,16 @@
         <h2 class="result__name" id="resultName"></h2>
         <p class="result__meta" id="resultMeta"></p>
         <p class="result__cuisine" id="resultCuisine" hidden></p>
+        <p class="result__hours" id="resultHours" hidden></p>
         <p class="result__status" id="resultStatus" hidden></p>
         <div class="sr-only" id="resultLive" aria-live="polite" aria-atomic="true"></div>
       </div>
 
       <div class="sheet__links" id="resultLinks">
+        <button type="button" class="btn btn--tonal btn--block" id="shareBtn">
+          <span class="material-symbols-outlined" aria-hidden="true">share</span>
+          結果をシェア
+        </button>
         <a
           class="btn btn--tonal btn--block"
           id="walkLink"
@@ -271,7 +321,7 @@
           <span class="material-symbols-outlined" aria-hidden="true"
             >directions_walk</span
           >
-          徒歩ルート
+          <span id="walkLabel">徒歩ルート</span>
         </a>
         <a
           class="btn btn--tonal btn--block"
@@ -345,6 +395,38 @@
         閉じる
       </button>
     </div>
+
+    <div
+      class="sheet sheet--settings"
+      id="settingsSheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settingsTitle"
+      hidden
+    >
+      <div class="sheet__handle" aria-hidden="true"></div>
+      <div class="sheet__header">
+        <h2 class="sheet__title" id="settingsTitle">設定</h2>
+      </div>
+      <label class="switch-row">
+        <span>許可済みなら自動で検索</span>
+        <input type="checkbox" id="autoStartToggle" />
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+      <label class="switch-row">
+        <span>食事向きのみ（バー・パブ除外）</span>
+        <input type="checkbox" id="mealOnlyToggle" />
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+      <p class="hint settings-hint">
+        設定はこの端末に保存されます。食事向きをオフにするとバー・パブ・ビアガーデンも候補に入ります。
+      </p>
+      <button type="button" class="btn btn--tonal btn--block" id="closeSettingsBtn">
+        閉じる
+      </button>
+    </div>
+
+    <div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
 
     <script type="module" src="js/app.js"></script>
   </body>

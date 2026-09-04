@@ -63,6 +63,7 @@ export function getPrefs() {
   return loadJson("prefs", {
     radius: 1000,
     autoStart: true,
+    mealOnly: true,
   });
 }
 

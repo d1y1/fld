@@ -220,9 +220,22 @@ function inAnyRange(minutes, ranges) {
 
 /**
  * @param {boolean | null} open
+ * @param {{ includeUnknown?: boolean }} [opts]
  */
-export function openStatusLabel(open) {
+export function openStatusLabel(open, { includeUnknown = false } = {}) {
   if (open === true) return "営業中";
   if (open === false) return "営業時間外";
-  return "";
+  return includeUnknown ? "営業時間不明" : "";
+}
+
+/**
+ * 表示用に営業時間文字列を短く整える
+ * @param {string | undefined | null} rule
+ */
+export function formatOpeningHours(rule) {
+  if (!rule || typeof rule !== "string") return "";
+  const trimmed = rule.trim();
+  if (!trimmed) return "";
+  if (trimmed === "24/7") return "24時間営業";
+  return trimmed.replaceAll(";", " / ");
 }

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="小さな Web ツールを集めた fld。めしガチャなどのユーティリティへすぐアクセスできます。"
+    />
+    <meta name="theme-color" content="#0f1c17" />
+    <title>fld — 小さなツール集</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0f1c17;
+        --bg-elevated: #162820;
+        --ink: #e8f0ea;
+        --muted: #9bb0a3;
+        --accent: #c8f25a;
+        --accent-ink: #13200f;
+        --line: rgba(232, 240, 234, 0.12);
+        --glow: rgba(200, 242, 90, 0.14);
+        --font-sans: "DM Sans", sans-serif;
+        --font-display: "Instrument Serif", Georgia, serif;
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        color-scheme: dark;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        font-family: var(--font-sans);
+        color: var(--ink);
+        background:
+          radial-gradient(ellipse 80% 50% at 10% -10%, var(--glow), transparent 55%),
+          radial-gradient(ellipse 60% 40% at 90% 10%, rgba(90, 180, 140, 0.12), transparent 50%),
+          linear-gradient(165deg, #0c1612 0%, var(--bg) 45%, #12241c 100%);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cpath d='M0 48V0h48' fill='none' stroke='rgba(232,240,234,0.04)' stroke-width='1'/%3E%3C/svg%3E");
+        opacity: 0.9;
+        z-index: 0;
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        width: min(720px, calc(100% - 2.5rem));
+        margin: 0 auto;
+        padding: clamp(3rem, 12vh, 6rem) 0 4rem;
+      }
+
+      .brand {
+        margin: 0 0 0.35rem;
+        font-family: var(--font-display);
+        font-size: clamp(4.5rem, 16vw, 7rem);
+        font-weight: 400;
+        line-height: 0.9;
+        letter-spacing: -0.03em;
+        animation: rise 0.8s var(--ease) both;
+      }
+
+      .brand span {
+        color: var(--accent);
+      }
+
+      .lede {
+        margin: 0 0 2.75rem;
+        max-width: 28rem;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.55;
+        animation: rise 0.8s var(--ease) 0.08s both;
+      }
+
+      .section-label {
+        margin: 0 0 1rem;
+        color: var(--muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        animation: rise 0.8s var(--ease) 0.14s both;
+      }
+
+      .tools {
+        display: grid;
+        gap: 0.85rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .tool {
+        animation: rise 0.8s var(--ease) both;
+      }
+
+      .tool:nth-child(1) {
+        animation-delay: 0.2s;
+      }
+
+      .tool:nth-child(2) {
+        animation-delay: 0.28s;
+      }
+
+      .tool a {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.35rem 1rem;
+        align-items: center;
+        padding: 1.15rem 1.25rem;
+        color: inherit;
+        text-decoration: none;
+        background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        backdrop-filter: blur(8px);
+        transition:
+          border-color 0.25s var(--ease),
+          transform 0.25s var(--ease),
+          background 0.25s var(--ease);
+      }
+
+      .tool a:hover,
+      .tool a:focus-visible {
+        border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+        background: color-mix(in srgb, var(--bg-elevated) 70%, #1e3a2c);
+        transform: translateY(-2px);
+        outline: none;
+      }
+
+      .tool__name {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      .tool__desc {
+        grid-column: 1;
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.45;
+      }
+
+      .tool__arrow {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        width: 2.25rem;
+        height: 2.25rem;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-size: 1.1rem;
+        font-weight: 700;
+        transition: transform 0.25s var(--ease);
+      }
+
+      .tool a:hover .tool__arrow,
+      .tool a:focus-visible .tool__arrow {
+        transform: translateX(3px);
+      }
+
+      .foot {
+        margin-top: 3rem;
+        color: color-mix(in srgb, var(--muted) 75%, transparent);
+        font-size: 0.8rem;
+        animation: rise 0.8s var(--ease) 0.36s both;
+      }
+
+      .foot a {
+        color: var(--ink);
+        text-underline-offset: 0.2em;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1 class="brand">fl<span>d</span></h1>
+      <p class="lede">小さな Web ツールをまとめたページです。使いたいものを選んでください。</p>
+
+      <p class="section-label">Tools</p>
+      <ul class="tools">
+        <li class="tool">
+          <a href="meshigacha/">
+            <h2 class="tool__name">めしガチャ</h2>
+            <p class="tool__desc">現在地の近くから、今日のごはんをランダムに決めます。</p>
+            <span class="tool__arrow" aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ul>
+
+      <p class="foot">
+        GitHub:
+        <a href="https://github.com/d1y1/fld" rel="noopener noreferrer">d1y1/fld</a>
+      </p>
+    </main>
+  </body>
+</html>

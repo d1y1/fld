@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#8B5000" />
+    <meta
+      name="description"
+      content="現在地周辺の外食店からランダムで今日のご飯を決めるめしガチャ"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="めしガチャ" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="めしガチャ" />
+    <meta
+      property="og:description"
+      content="いまいる場所の近くから、今日のごはんをランダムに決めます。"
+    />
+    <meta
+      property="og:image"
+      content="https://d1y1.github.io/meshigacha/icons/og.png"
+    />
+    <meta property="og:url" content="https://d1y1.github.io/meshigacha/" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="めしガチャ" />
+    <meta
+      name="twitter:description"
+      content="いまいる場所の近くから、今日のごはんをランダムに決めます。"
+    />
+    <meta
+      name="twitter:image"
+      content="https://d1y1.github.io/meshigacha/icons/og.png"
+    />
+
+    <title>めしガチャ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="offline-banner" id="offlineBanner" hidden role="status">
+      オフラインです。店舗検索には接続が必要です。
+    </div>
+
+    <div class="app" id="app">
+      <header class="top-app-bar" id="topBar">
+        <div class="top-app-bar__row">
+          <h1 class="top-app-bar__title">めしガチャ</h1>
+          <div class="top-app-bar__actions">
+            <button
+              type="button"
+              class="icon-btn"
+              id="historyBtn"
+              aria-label="履歴"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true"
+                >history</span
+              >
+            </button>
+            <button
+              type="button"
+              class="icon-btn"
+              id="refreshBtn"
+              aria-label="再検索"
+              hidden
+            >
+              <span class="material-symbols-outlined" aria-hidden="true"
+                >refresh</span
+              >
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="main" id="main">
+        <section class="screen screen--home" id="screenHome" data-screen="home">
+          <div class="hero">
+            <div class="hero__mark" aria-hidden="true">
+              <span class="material-symbols-outlined hero__icon">ramen_dining</span>
+            </div>
+            <p class="hero__brand">めしガチャ</p>
+            <p class="hero__lead">
+              いまいる場所の近くから、<br />今日のごはんをランダムに決めます。
+            </p>
+          </div>
+
+          <div class="home-controls">
+            <button type="button" class="btn btn--filled btn--lg" id="startBtn">
+              <span class="material-symbols-outlined" aria-hidden="true"
+                >my_location</span
+              >
+              現在地から探す
+            </button>
+            <p class="hint" id="homeHint">
+              位置情報の許可が必要です。営業中のお店だけを表示します。
+            </p>
+          </div>
+        </section>
+
+        <section
+          class="screen screen--loading"
+          id="screenLoading"
+          data-screen="loading"
+          hidden
+        >
+          <div class="loading">
+            <div class="circular-progress" role="status" aria-label="読み込み中">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <circle class="circular-progress__track" cx="24" cy="24" r="20" />
+                <circle
+                  class="circular-progress__indicator"
+                  cx="24"
+                  cy="24"
+                  r="20"
+                />
+              </svg>
+            </div>
+            <p class="loading__text" id="loadingText">現在地を取得しています…</p>
+            <p class="loading__sub" id="loadingSub" hidden></p>
+          </div>
+        </section>
+
+        <section
+          class="screen screen--list"
+          id="screenList"
+          data-screen="list"
+          hidden
+        >
+          <div class="filters" id="filters">
+            <label class="field">
+              <span class="field__label">検索半径</span>
+              <div class="segmented" role="radiogroup" aria-label="検索半径">
+                <label class="segmented__item">
+                  <input type="radio" name="radius" value="500" />
+                  <span>500m</span>
+                </label>
+                <label class="segmented__item">
+                  <input type="radio" name="radius" value="1000" checked />
+                  <span>1km</span>
+                </label>
+                <label class="segmented__item">
+                  <input type="radio" name="radius" value="2000" />
+                  <span>2km</span>
+                </label>
+              </div>
+            </label>
+            <p class="filters__note">営業中のお店のみ表示（営業時間外は除外）</p>
+          </div>
+
+          <div class="list-meta" id="listMeta"></div>
+          <ul class="restaurant-list" id="restaurantList" role="list"></ul>
+
+          <div class="empty-state" id="emptyState" hidden>
+            <span class="material-symbols-outlined empty-state__icon"
+              >search_off</span
+            >
+            <p class="empty-state__title">お店が見つかりませんでした</p>
+            <p class="empty-state__body" id="emptyBody">
+              半径を広げて再検索してみてください。
+            </p>
+            <div class="empty-state__actions">
+              <button
+                type="button"
+                class="btn btn--filled"
+                id="expandRadiusBtn"
+                hidden
+              >
+                2km で再検索
+              </button>
+              <button type="button" class="btn btn--text" id="emptyRetryBtn">
+                最初に戻る
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section
+          class="screen screen--error"
+          id="screenError"
+          data-screen="error"
+          hidden
+        >
+          <div class="empty-state">
+            <span
+              class="material-symbols-outlined empty-state__icon"
+              id="errorIcon"
+              >error</span
+            >
+            <p class="empty-state__title" id="errorTitle">エラーが発生しました</p>
+            <p class="empty-state__body" id="errorBody"></p>
+            <div class="empty-state__actions">
+              <button type="button" class="btn btn--filled" id="errorRetryBtn">
+                もう一度試す
+              </button>
+              <button type="button" class="btn btn--text" id="errorHomeBtn">
+                最初に戻る
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="bottom-bar" id="bottomBar" hidden>
+        <button
+          type="button"
+          class="btn btn--filled btn--lg btn--block"
+          id="gachaBtn"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">casino</span>
+          ガチャる
+        </button>
+      </footer>
+    </div>
+
+    <div class="scrim" id="scrim" hidden aria-hidden="true"></div>
+
+    <div
+      class="sheet"
+      id="resultSheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="resultName"
+      hidden
+    >
+      <div class="sheet__handle" aria-hidden="true"></div>
+      <p class="sheet__eyebrow">今日のごはんは…</p>
+
+      <div class="slot" id="slot" aria-hidden="true" hidden>
+        <div class="slot__window">
+          <div class="slot__reel" id="slotReel"></div>
+        </div>
+      </div>
+
+      <div class="result" id="resultCard">
+        <div class="result__spin" id="resultSpin" aria-hidden="true">
+          <span class="material-symbols-outlined">restaurant</span>
+        </div>
+        <h2 class="result__name" id="resultName"></h2>
+        <p class="result__meta" id="resultMeta"></p>
+        <p class="result__cuisine" id="resultCuisine" hidden></p>
+        <p class="result__status" id="resultStatus" hidden></p>
+        <div class="sr-only" id="resultLive" aria-live="polite" aria-atomic="true"></div>
+      </div>
+
+      <div class="sheet__links" id="resultLinks">
+        <a
+          class="btn btn--tonal btn--block"
+          id="walkLink"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true"
+            >directions_walk</span
+          >
+          徒歩ルート
+        </a>
+        <a
+          class="btn btn--tonal btn--block"
+          id="mapLink"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">map</span>
+          地図で見る
+        </a>
+        <a
+          class="btn btn--tonal btn--block"
+          id="phoneLink"
+          href="#"
+          hidden
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">call</span>
+          <span id="phoneLabel">電話する</span>
+        </a>
+        <a
+          class="btn btn--tonal btn--block"
+          id="webLink"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          hidden
+        >
+          <span class="material-symbols-outlined" aria-hidden="true"
+            >language</span
+          >
+          公式サイト
+        </a>
+      </div>
+
+      <div class="sheet__actions">
+        <button type="button" class="btn btn--filled btn--block" id="againBtn">
+          <span class="material-symbols-outlined" aria-hidden="true">casino</span>
+          もう一度ガチャる
+        </button>
+        <button type="button" class="btn btn--text btn--block" id="excludeBtn">
+          <span class="material-symbols-outlined" aria-hidden="true"
+            >block</span
+          >
+          除外してもう一度
+        </button>
+        <button type="button" class="btn btn--text btn--block" id="closeSheetBtn">
+          閉じる
+        </button>
+      </div>
+    </div>
+
+    <div
+      class="sheet sheet--history"
+      id="historySheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="historyTitle"
+      hidden
+    >
+      <div class="sheet__handle" aria-hidden="true"></div>
+      <div class="sheet__header">
+        <h2 class="sheet__title" id="historyTitle">ガチャ履歴</h2>
+        <button type="button" class="btn btn--text" id="clearHistoryBtn">
+          クリア
+        </button>
+      </div>
+      <ul class="history-list" id="historyList"></ul>
+      <p class="hint" id="historyEmpty" hidden>まだ履歴がありません</p>
+      <button type="button" class="btn btn--tonal btn--block" id="closeHistoryBtn">
+        閉じる
+      </button>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

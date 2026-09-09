@@ -33,6 +33,7 @@ export const VENUES = [
  * @property {string} venueId
  * @property {number} raceNo
  * @property {string} name
+ * @property {string} date — YYYY-MM-DD（デモ開催日）
  * @property {string} distance
  * @property {string} className
  * @property {string} condition — 馬場
@@ -47,6 +48,7 @@ export const RACES = [
     venueId: "oi",
     raceNo: 11,
     name: "東京スプリント特別",
+    date: "2026-09-09",
     distance: "ダート1200m",
     className: "A2",
     condition: "良",
@@ -69,6 +71,7 @@ export const RACES = [
     venueId: "oi",
     raceNo: 8,
     name: "3歳以上C1",
+    date: "2026-09-09",
     distance: "ダート1400m",
     className: "C1",
     condition: "稍重",
@@ -89,6 +92,7 @@ export const RACES = [
     venueId: "kawasaki",
     raceNo: 10,
     name: "川崎マイラーズ",
+    date: "2026-09-10",
     distance: "ダート1600m",
     className: "A1",
     condition: "良",
@@ -110,6 +114,7 @@ export const RACES = [
     venueId: "urawa",
     raceNo: 9,
     name: "浦和記念トライアル",
+    date: "2026-09-08",
     distance: "ダート1400m",
     className: "A2",
     condition: "良",
@@ -130,6 +135,7 @@ export const RACES = [
     venueId: "funabashi",
     raceNo: 11,
     name: "船橋スプリント",
+    date: "2026-09-11",
     distance: "ダート1000m",
     className: "A2",
     condition: "良",
@@ -150,6 +156,7 @@ export const RACES = [
     venueId: "monbetsu",
     raceNo: 7,
     name: "3歳未勝利",
+    date: "2026-09-07",
     distance: "ダート1200m",
     className: "未勝利",
     condition: "稍重",
@@ -170,6 +177,7 @@ export const RACES = [
     venueId: "morioka",
     raceNo: 10,
     name: "マイルチャンピオンシップ南部杯トライアル",
+    date: "2026-09-06",
     distance: "ダート1600m",
     className: "オープン",
     condition: "良",
@@ -190,6 +198,7 @@ export const RACES = [
     venueId: "sonoda",
     raceNo: 11,
     name: "兵庫チャンピオンシップ",
+    date: "2026-09-10",
     distance: "ダート1400m",
     className: "重賞",
     condition: "良",
@@ -211,6 +220,7 @@ export const RACES = [
     venueId: "kochi",
     raceNo: 9,
     name: "夜さ恋特別",
+    date: "2026-09-09",
     distance: "ダート1300m",
     className: "A",
     condition: "稍重",
@@ -231,6 +241,7 @@ export const RACES = [
     venueId: "saga",
     raceNo: 8,
     name: "佐賀ヴィーナスカップ",
+    date: "2026-09-05",
     distance: "ダート1400m",
     className: "重賞",
     condition: "良",
@@ -251,6 +262,7 @@ export const RACES = [
     venueId: "obihiro",
     raceNo: 10,
     name: "ばんえい十勝特別",
+    date: "2026-09-08",
     distance: "ばんえい200m",
     className: "オープン",
     condition: "重",

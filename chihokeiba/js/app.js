@@ -91,7 +91,7 @@ function renderRaces(venueId) {
     btn.innerHTML = `
       <div class="race-card__row">
         <h3 class="race-card__name"><span class="race-card__no">${race.raceNo}R</span>${escapeHtml(race.name)}</h3>
-        <span class="race-card__time">${escapeHtml(race.postTime)}</span>
+        <span class="race-card__time">${escapeHtml(formatRaceDate(race.date))}<br>${escapeHtml(race.postTime)}</span>
       </div>
       <p class="race-card__meta">${escapeHtml(race.distance)} · ${escapeHtml(race.className)} · 馬場${escapeHtml(race.condition)} · ${race.horses.length}頭</p>
     `;
@@ -107,7 +107,7 @@ function selectRace(raceId) {
   const race = getRace(raceId);
   const venue = getVenue(race.venueId);
   els.raceHeading.textContent = `${race.raceNo}R ${race.name}`;
-  els.raceMeta.textContent = `${venue.name} · ${race.distance} · ${race.className} · 馬場${race.condition} · 発走 ${race.postTime}`;
+  els.raceMeta.textContent = `${formatRaceDate(race.date)} · ${venue.name} · ${race.distance} · ${race.className} · 馬場${race.condition} · 発走 ${race.postTime}`;
   renderEntries(race);
   showView("race");
 }
@@ -163,7 +163,7 @@ function renderResult(race, venue, prediction) {
   const { ranked, tickets, summary } = prediction;
 
   els.resultSummary.innerHTML = `
-    <p class="result-hero__tone">${escapeHtml(summary.tone)} · ${escapeHtml(venue.name)} ${race.raceNo}R</p>
+    <p class="result-hero__tone">${escapeHtml(summary.tone)} · ${escapeHtml(formatRaceDate(race.date))} · ${escapeHtml(venue.name)} ${race.raceNo}R</p>
     <h2 class="result-hero__title">${escapeHtml(summary.headline)}</h2>
     <p class="result-hero__detail">${escapeHtml(summary.detail)}</p>
   `;
@@ -226,7 +226,7 @@ async function onShare() {
     .join("\n");
 
   const text = [
-    `【地方競馬予測】${venue.name} ${race.raceNo}R ${race.name}`,
+    `【地方競馬予測】${formatRaceDate(race.date)} ${venue.name} ${race.raceNo}R ${race.name}`,
     prediction.summary.headline,
     top,
     "",
@@ -303,6 +303,19 @@ function formatForm(recent) {
   return recent
     .map((n) => (n > 0 ? String(n) : "-"))
     .join("-");
+}
+
+/** @param {string} isoDate YYYY-MM-DD */
+function formatRaceDate(isoDate) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  if (!match) return isoDate;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const weekday = ["日", "月", "火", "水", "木", "金", "土"][
+    new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+  ];
+  return `${month}月${day}日（${weekday}）`;
 }
 
 function formatWeightChange(change) {

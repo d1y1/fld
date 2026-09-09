@@ -307,8 +307,10 @@ body {
 .race-card__time {
   flex-shrink: 0;
   color: var(--md-sys-color-secondary);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
+  line-height: 1.35;
+  text-align: right;
 }
 
 .race-card__meta {

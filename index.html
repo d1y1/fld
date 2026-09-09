@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="小さな Web ツールを集めた fld。めしガチャなどのユーティリティへすぐアクセスできます。"
+      content="小さな Web ツールを集めた fld。めしガチャや地方競馬予測などのユーティリティへすぐアクセスできます。"
     />
     <meta name="theme-color" content="#ffffff" />
     <title>fld — 小さなツール集</title>
@@ -177,6 +177,10 @@
 
       .tool:nth-child(1) {
         animation-delay: 0.14s;
+      }
+
+      .tool:nth-child(2) {
+        animation-delay: 0.2s;
       }
 
       .tool a {
@@ -373,6 +377,20 @@
             <span class="tool__body">
               <h2 class="tool__name">めしガチャ</h2>
               <p class="tool__desc">現在地の近くから、今日のごはんをランダムに決めます。</p>
+            </span>
+            <span class="tool__arrow" aria-hidden="true">
+              <span class="material-symbols-outlined">arrow_forward</span>
+            </span>
+          </a>
+        </li>
+        <li class="tool">
+          <a href="chihokeiba/">
+            <span class="tool__icon" aria-hidden="true">
+              <span class="material-symbols-outlined">sports_score</span>
+            </span>
+            <span class="tool__body">
+              <h2 class="tool__name">地方競馬予測</h2>
+              <p class="tool__desc">デモレースの出馬表から、着順予測と買い目案を出します。</p>
             </span>
             <span class="tool__arrow" aria-hidden="true">
               <span class="material-symbols-outlined">arrow_forward</span>

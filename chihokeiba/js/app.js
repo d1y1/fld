@@ -147,8 +147,21 @@ function renderResult(race, venue, prediction) {
       <div class="horse-line">
         <span class="horse-umaban">${row.horse.number}</span>
         <span class="horse-name">${escapeHtml(row.horse.name)}</span>
+        <div class="horse-top3">
+          <strong>${(row.top3Prob * 100).toFixed(1)}%</strong>
+          <span>3着内確率</span>
+        </div>
       </div>
+      <div class="meter" aria-hidden="true"><span style="width:${Math.max(8, Math.round(row.top3Prob * 100))}%"></span></div>
       <div class="card-metrics-block">${metricsLine(row.top3Prob, ev, placeOdds)}</div>
+      <div class="breakdown">
+        <div class="breakdown__cell"><strong>${row.breakdown.form}</strong><span>近走</span></div>
+        <div class="breakdown__cell"><strong>${row.breakdown.odds}</strong><span>人気</span></div>
+        <div class="breakdown__cell"><strong>${row.breakdown.jockey}</strong><span>騎手</span></div>
+        <div class="breakdown__cell"><strong>${row.breakdown.weight}</strong><span>体重</span></div>
+        <div class="breakdown__cell"><strong>${row.breakdown.draw}</strong><span>枠順</span></div>
+        <div class="breakdown__cell"><strong>${row.breakdown.consistency}</strong><span>安定</span></div>
+      </div>
     `;
     li.appendChild(article);
     els.rankList.appendChild(li);

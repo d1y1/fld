@@ -213,6 +213,43 @@ main {
 
 .horse-name {
   min-width: 0;
+  flex: 1;
+}
+
+.horse-top3 {
+  flex-shrink: 0;
+  text-align: right;
+  line-height: 1.15;
+}
+
+.horse-top3 strong {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.horse-top3 span {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.meter {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--surface-container);
+  margin: 0.45rem 0 0.35rem;
+}
+
+.meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
 }
 
 .card-metrics-block {
@@ -220,6 +257,40 @@ main {
   font-weight: 600;
   color: var(--muted);
   margin-top: 0.125rem;
+}
+
+.breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.breakdown__cell {
+  padding: 0.4rem 0.35rem;
+  border-radius: 8px;
+  background: var(--surface-container);
+  text-align: center;
+}
+
+.rank-card.highlight .breakdown__cell {
+  background: color-mix(in srgb, #ffffff 70%, var(--primary-light));
+}
+
+.breakdown__cell strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.breakdown__cell span {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 700;
 }
 
 .metric-pos {

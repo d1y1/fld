@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#1B5E3B" />
+    <meta name="theme-color" content="#1b5e20" />
     <meta
       name="description"
       content="地方競馬のデモレースを選ぶと、近走・人気・騎手などから着順予測と買い目案をすぐ出すツール"
@@ -21,98 +21,66 @@
     />
     <meta property="og:url" content="https://d1y1.github.io/fld/chihokeiba/" />
     <meta property="og:locale" content="ja_JP" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <header class="top-app-bar">
-      <button type="button" class="icon-btn" id="backBtn" aria-label="戻る">
-        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-      </button>
-      <h1 class="top-app-bar__title" id="topTitle">地方競馬予測</h1>
-      <a class="icon-btn" href="../" aria-label="fldトップへ">
-        <span class="material-symbols-outlined" aria-hidden="true">home</span>
-      </a>
-    </header>
+    <div class="app">
+      <header class="header">
+        <button type="button" class="nav-back" id="backBtn" hidden>戻る</button>
+        <h1 class="title-bar" id="topTitle">地方競馬予測</h1>
+        <a class="nav-home" href="../">fld</a>
+      </header>
 
-    <main class="page">
-      <section class="panel" id="viewHome">
-        <div class="hero">
-          <h2 class="brand">地方競馬<span>予測</span></h2>
+      <main>
+        <section id="viewHome">
           <p class="lede">
             競馬場とレースを選ぶと、近走・人気・騎手・体重などから着順イメージと買い目案をすぐ出します。
           </p>
-          <p class="disclaimer">
-            <span class="material-symbols-outlined" aria-hidden="true">info</span>
-            <span>
-              出走表はデモ用のサンプルです。実開催・実オッズとは連動しません。娯楽・学習用途であり、馬券購入の助言ではありません。
-            </span>
+          <div class="alert-banner">
+            デモ予想です
+            <p>
+              出走表はサンプルです。実開催・実オッズとは連動しません。娯楽・学習用途であり、馬券購入の助言ではありません。
+            </p>
+          </div>
+
+          <p class="section-label">競馬場を選ぶ</p>
+          <ul class="venue-grid" id="venueGrid"></ul>
+
+          <p class="foot-note">
+            fld ツール集の一部です。
+            <a href="../">トップへ戻る</a>
+            · 公式レース情報は
+            <a href="https://www.keiba.go.jp/" rel="noopener noreferrer">地方競馬情報サイト</a>
+            を参照してください。
           </p>
-        </div>
+        </section>
 
-        <p class="section-label">
-          <span class="material-symbols-outlined" aria-hidden="true">stadium</span>
-          競馬場を選ぶ
-        </p>
-        <ul class="venue-grid" id="venueGrid"></ul>
+        <section id="viewVenue" hidden>
+          <p class="section-date" id="venueHeading">レース一覧</p>
+          <ul class="race-list" id="raceList"></ul>
+        </section>
 
-        <p class="foot-note">
-          fld ツール集の一部です。
-          <a href="../">トップへ戻る</a>
-          · 公式レース情報は
-          <a href="https://www.keiba.go.jp/" rel="noopener noreferrer">地方競馬情報サイト</a>
-          を参照してください。
-        </p>
-      </section>
+        <section id="viewResult" hidden>
+          <p class="section-date" id="resultDate"></p>
+          <div class="hit-summary" id="resultSummary"></div>
 
-      <section class="panel" id="viewVenue" hidden>
-        <p class="section-label">
-          <span class="material-symbols-outlined" aria-hidden="true">event</span>
-          <span id="venueHeading">レース一覧</span>
-        </p>
-        <ul class="race-list" id="raceList"></ul>
-      </section>
+          <p class="section-label">出走馬予想</p>
+          <ol class="rank-list" id="rankList"></ol>
 
-      <section class="panel" id="viewResult" hidden>
-        <div class="result-hero" id="resultSummary"></div>
+          <p class="section-label">買い目案</p>
+          <ul class="ticket-list" id="ticketList"></ul>
 
-        <p class="section-label">
-          <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
-          予測着順
-        </p>
-        <ol class="rank-list" id="rankList"></ol>
+          <div class="actions">
+            <button type="button" class="btn btn--filled" id="shareBtn">結果をシェア</button>
+            <button type="button" class="btn btn--tonal" id="againBtn">レース一覧に戻る</button>
+          </div>
 
-        <p class="section-label">
-          <span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span>
-          買い目案
-        </p>
-        <ul class="ticket-list" id="ticketList"></ul>
-
-        <div class="actions" style="margin-top: 1.25rem">
-          <button type="button" class="btn btn--filled" id="shareBtn">
-            <span class="material-symbols-outlined" aria-hidden="true">ios_share</span>
-            結果をシェア
-          </button>
-          <button type="button" class="btn btn--tonal" id="againBtn">
-            <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
-            レース一覧に戻る
-          </button>
-        </div>
-
-        <p class="foot-note">
-          評価の主指標は 3 着以内確率（Harville 近似）です。スコアは近走・単勝オッズ・騎手勝率・体重増減・枠順・安定度の加重合成から算出しています。実レースの結果を保証するものではありません。
-        </p>
-      </section>
-    </main>
+          <p class="foot-note">
+            確率は 3 着以内（Harville 近似）、期待値は確率 × 複勝オッズ目安です。実レースの結果を保証するものではありません。
+          </p>
+        </section>
+      </main>
+    </div>
 
     <script type="module" src="js/app.js"></script>
   </body>

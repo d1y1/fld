@@ -18,15 +18,10 @@ const els = {
   backBtn: document.getElementById("backBtn"),
   viewHome: document.getElementById("viewHome"),
   viewVenue: document.getElementById("viewVenue"),
-  viewRace: document.getElementById("viewRace"),
   viewResult: document.getElementById("viewResult"),
   venueGrid: document.getElementById("venueGrid"),
   raceList: document.getElementById("raceList"),
   venueHeading: document.getElementById("venueHeading"),
-  raceHeading: document.getElementById("raceHeading"),
-  raceMeta: document.getElementById("raceMeta"),
-  entries: document.getElementById("entries"),
-  predictBtn: document.getElementById("predictBtn"),
   resultSummary: document.getElementById("resultSummary"),
   rankList: document.getElementById("rankList"),
   ticketList: document.getElementById("ticketList"),
@@ -39,11 +34,11 @@ init();
 function init() {
   renderVenues();
   els.backBtn.addEventListener("click", onBack);
-  els.predictBtn.addEventListener("click", onPredict);
   els.shareBtn.addEventListener("click", onShare);
   els.againBtn.addEventListener("click", () => {
     state.prediction = null;
-    showView("race");
+    state.raceId = null;
+    showView("venue");
   });
   showView("home");
 }
@@ -101,61 +96,25 @@ function renderRaces(venueId) {
   }
 }
 
-function selectRace(raceId) {
+async function selectRace(raceId) {
+  if (state.predicting) return;
+
   state.raceId = raceId;
   state.prediction = null;
-  const race = getRace(raceId);
-  const venue = getVenue(race.venueId);
-  els.raceHeading.textContent = `${race.raceNo}R ${race.name}`;
-  els.raceMeta.textContent = `${formatRaceDate(race.date)} · ${venue.name} · ${race.distance} · ${race.className} · 馬場${race.condition} · 発走 ${race.postTime}`;
-  renderEntries(race);
-  showView("race");
-}
-
-function renderEntries(race) {
-  const sorted = [...race.horses].sort((a, b) => a.odds - b.odds);
-  els.entries.innerHTML = "";
-  for (const horse of sorted) {
-    const li = document.createElement("li");
-    li.className = "entry";
-    const form = formatForm(horse.recent);
-    li.innerHTML = `
-      <span class="entry__num">${horse.number}</span>
-      <div>
-        <p class="entry__name">${escapeHtml(horse.name)}</p>
-        <p class="entry__sub">${escapeHtml(horse.jockey)} · ${horse.age}歳${escapeHtml(horse.sex)} · 体重${horse.weight}${formatWeightChange(horse.weightChange)} · 近走 ${form}</p>
-      </div>
-      <div class="entry__odds">
-        <strong>${horse.odds.toFixed(1)}</strong>
-        <span>単勝オッズ</span>
-      </div>
-    `;
-    els.entries.appendChild(li);
-  }
-}
-
-async function onPredict() {
-  const race = getRace(state.raceId);
-  if (!race || state.predicting) return;
-
   state.predicting = true;
   document.body.classList.add("predicting");
-  els.predictBtn.disabled = true;
-  const icon = els.predictBtn.querySelector(".material-symbols-outlined");
-  const prevIcon = icon.textContent;
-  icon.textContent = "progress_activity";
 
-  await wait(650);
-
+  const race = getRace(raceId);
   const venue = getVenue(race.venueId);
+
+  await wait(280);
+
   const prediction = predictRace(race, { isBanei: venue?.id === "obihiro" });
   state.prediction = prediction;
   renderResult(race, venue, prediction);
 
   state.predicting = false;
   document.body.classList.remove("predicting");
-  els.predictBtn.disabled = false;
-  icon.textContent = prevIcon;
   showView("result");
 }
 
@@ -252,12 +211,8 @@ async function onShare() {
 }
 
 function onBack() {
-  if (state.prediction) {
+  if (state.prediction || state.raceId) {
     state.prediction = null;
-    showView("race");
-    return;
-  }
-  if (state.raceId) {
     state.raceId = null;
     showView("venue");
     return;
@@ -274,7 +229,6 @@ function showView(name) {
   const map = {
     home: els.viewHome,
     venue: els.viewVenue,
-    race: els.viewRace,
     result: els.viewResult,
   };
   for (const [key, el] of Object.entries(map)) {
@@ -282,7 +236,6 @@ function showView(name) {
   }
 
   const venue = state.venueId ? getVenue(state.venueId) : null;
-  const race = state.raceId ? getRace(state.raceId) : null;
 
   if (name === "home") {
     els.topTitle.textContent = "地方競馬予測";
@@ -290,19 +243,10 @@ function showView(name) {
   } else if (name === "venue") {
     els.topTitle.textContent = venue?.name ?? "競馬場";
     els.backBtn.setAttribute("aria-label", "競馬場選択へ戻る");
-  } else if (name === "race") {
-    els.topTitle.textContent = race ? `${race.raceNo}R` : "レース";
-    els.backBtn.setAttribute("aria-label", "レース一覧へ戻る");
   } else {
     els.topTitle.textContent = "予測結果";
-    els.backBtn.setAttribute("aria-label", "出馬表へ戻る");
+    els.backBtn.setAttribute("aria-label", "レース一覧へ戻る");
   }
-}
-
-function formatForm(recent) {
-  return recent
-    .map((n) => (n > 0 ? String(n) : "-"))
-    .join("-");
 }
 
 /** @param {string} isoDate YYYY-MM-DD */
@@ -318,15 +262,7 @@ function formatRaceDate(isoDate) {
   return `${month}月${day}日（${weekday}）`;
 }
 
-function formatWeightChange(change) {
-  if (change === 0) return "(±0)";
-  return `(${change > 0 ? "+" : ""}${change})`;
-}
-
 function flashButton(btn, label) {
-  const original = btn.dataset.label || btn.textContent.trim();
-  btn.dataset.label = original;
-  const textNode = [...btn.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
   const span = btn.querySelector("span.label");
   if (span) {
     span.textContent = label;
@@ -337,7 +273,6 @@ function flashButton(btn, label) {
     const labelEl = btn.querySelector("span.label");
     if (labelEl) labelEl.remove();
   }, 1600);
-  void textNode;
 }
 
 function wait(ms) {

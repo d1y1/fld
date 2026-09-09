@@ -3,6 +3,7 @@ import {
   getVenue,
   getRacesByVenue,
   getRace,
+  getHoldingDateLabel,
 } from "./data.js";
 import { predictRace } from "./predictor.js";
 
@@ -34,6 +35,8 @@ init();
 
 function init() {
   renderVenues();
+  const holdingDate = document.getElementById("holdingDate");
+  if (holdingDate) holdingDate.textContent = getHoldingDateLabel();
   els.backBtn.addEventListener("click", onBack);
   els.shareBtn.addEventListener("click", onShare);
   els.againBtn.addEventListener("click", () => {

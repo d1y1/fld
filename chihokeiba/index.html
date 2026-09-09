@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#1B5E3B" />
     <meta
       name="description"
-      content="地方競馬のデモレースを選んで、近走・人気・騎手などから着順予測と買い目案を出すツール"
+      content="地方競馬のデモレースを選ぶと、近走・人気・騎手などから着順予測と買い目案をすぐ出すツール"
     />
     <title>地方競馬予測 — fld</title>
     <link rel="canonical" href="https://d1y1.github.io/fld/chihokeiba/" />
@@ -49,7 +49,7 @@
         <div class="hero">
           <h2 class="brand">地方競馬<span>予測</span></h2>
           <p class="lede">
-            競馬場とレースを選ぶと、近走・人気・騎手・体重などから着順イメージと買い目案を出します。
+            競馬場とレースを選ぶと、近走・人気・騎手・体重などから着順イメージと買い目案をすぐ出します。
           </p>
           <p class="disclaimer">
             <span class="material-symbols-outlined" aria-hidden="true">info</span>
@@ -82,28 +82,6 @@
         <ul class="race-list" id="raceList"></ul>
       </section>
 
-      <section class="panel" id="viewRace" hidden>
-        <div class="hero" style="margin-bottom: 1.25rem">
-          <h2 class="brand" style="font-size: clamp(1.6rem, 6vw, 2.2rem)" id="raceHeading">
-            レース
-          </h2>
-          <p class="lede" id="raceMeta"></p>
-        </div>
-
-        <p class="section-label">
-          <span class="material-symbols-outlined" aria-hidden="true">format_list_numbered</span>
-          出馬表（人気順）
-        </p>
-        <ul class="entries" id="entries"></ul>
-
-        <div class="actions">
-          <button type="button" class="btn btn--filled" id="predictBtn">
-            <span class="material-symbols-outlined" aria-hidden="true">psychology</span>
-            このレースを予測する
-          </button>
-        </div>
-      </section>
-
       <section class="panel" id="viewResult" hidden>
         <div class="result-hero" id="resultSummary"></div>
 
@@ -126,7 +104,7 @@
           </button>
           <button type="button" class="btn btn--tonal" id="againBtn">
             <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
-            出馬表に戻る
+            レース一覧に戻る
           </button>
         </div>
 

@@ -1,15 +1,12 @@
-/** 地方競馬（NAR）デモレースデータ — 実開催とは無関係のサンプルです */
+/** 2026-09-09（水）開催分のデモデータ。レース名・時刻は当日番組に準拠。出走馬はデモ用サンプルです。 */
+
+const TODAY = "2026-09-09";
+
 export const VENUES = [
-  { id: "oi", name: "大井", region: "南関東", surface: "ダート" },
-  { id: "kawasaki", name: "川崎", region: "南関東", surface: "ダート" },
-  { id: "urawa", name: "浦和", region: "南関東", surface: "ダート" },
-  { id: "funabashi", name: "船橋", region: "南関東", surface: "ダート" },
-  { id: "monbetsu", name: "門別", region: "北海道", surface: "ダート" },
-  { id: "morioka", name: "盛岡", region: "東北", surface: "ダート" },
-  { id: "sonoda", name: "園田", region: "兵庫", surface: "ダート" },
-  { id: "kochi", name: "高知", region: "四国", surface: "ダート" },
-  { id: "saga", name: "佐賀", region: "九州", surface: "ダート" },
-  { id: "obihiro", name: "帯広", region: "ばんえい", surface: "ばんえい" },
+  { id: "kawasaki", name: "川崎", region: "南関東", surface: "ダート", holding: true },
+  { id: "monbetsu", name: "門別", region: "北海道", surface: "ダート", holding: true },
+  { id: "kasamatsu", name: "笠松", region: "岐阜", surface: "ダート", holding: true },
+  { id: "sonoda", name: "園田", region: "兵庫", surface: "ダート", holding: true },
 ];
 
 /**
@@ -20,11 +17,11 @@ export const VENUES = [
  * @property {number} odds
  * @property {number} weight
  * @property {number} weightChange
- * @property {number[]} recent — 直近成績（着順）。0は除外・未出走扱い
- * @property {number} jockeyWinRate — 騎手勝率 0–1
+ * @property {number[]} recent
+ * @property {number} jockeyWinRate
  * @property {number} age
- * @property {string} sex — 牡 / 牝 / セ
- * @property {number} [burden] — 負担重量 kg
+ * @property {string} sex
+ * @property {number} [burden]
  */
 
 /**
@@ -33,250 +30,311 @@ export const VENUES = [
  * @property {string} venueId
  * @property {number} raceNo
  * @property {string} name
- * @property {string} date — YYYY-MM-DD（デモ開催日）
+ * @property {string} date
  * @property {string} distance
  * @property {string} className
- * @property {string} condition — 馬場
+ * @property {string} condition
  * @property {string} postTime
  * @property {Horse[]} horses
  */
 
+/**
+ * @param {Array<[number, string, string, number, number, number, number[], number, number, string, number?]>} rows
+ * @returns {Horse[]}
+ */
+function horses(rows) {
+  return rows.map(
+    ([
+      number,
+      name,
+      jockey,
+      odds,
+      weight,
+      weightChange,
+      recent,
+      jockeyWinRate,
+      age,
+      sex,
+      burden,
+    ]) => ({
+      number,
+      name,
+      jockey,
+      odds,
+      weight,
+      weightChange,
+      recent,
+      jockeyWinRate,
+      age,
+      sex,
+      burden: burden ?? (sex === "牝" ? 54 : 56),
+    })
+  );
+}
+
 /** @type {Race[]} */
 export const RACES = [
+  // —— 川崎（雨・ダート不良）——
   {
-    id: "oi-11",
-    venueId: "oi",
-    raceNo: 11,
-    name: "東京スプリント特別",
-    date: "2026-09-09",
-    distance: "ダート1200m",
-    className: "A2",
-    condition: "良",
-    postTime: "20:40",
-    horses: [
-      { number: 1, name: "ナイトリーフ", jockey: "森下博", odds: 8.4, weight: 478, weightChange: -2, recent: [2, 3, 1, 5, 4], jockeyWinRate: 0.11, age: 5, sex: "牡", burden: 56 },
-      { number: 2, name: "サクラノホシ", jockey: "御神本訓", odds: 3.2, weight: 492, weightChange: 4, recent: [1, 1, 2, 3, 1], jockeyWinRate: 0.14, age: 4, sex: "牡", burden: 57 },
-      { number: 3, name: "ブルーカナリア", jockey: "山田敬士", odds: 12.6, weight: 456, weightChange: 0, recent: [4, 2, 6, 3, 5], jockeyWinRate: 0.09, age: 4, sex: "牝", burden: 54 },
-      { number: 4, name: "カゼノキセキ", jockey: "本橋孝太", odds: 5.8, weight: 486, weightChange: 2, recent: [3, 1, 4, 2, 2], jockeyWinRate: 0.12, age: 6, sex: "牡", burden: 56 },
-      { number: 5, name: "マリンフラッシュ", jockey: "笹川翼", odds: 18.0, weight: 468, weightChange: -6, recent: [7, 5, 8, 4, 6], jockeyWinRate: 0.13, age: 5, sex: "牝", burden: 54 },
-      { number: 6, name: "ゴールドスパイク", jockey: "真島大輔", odds: 4.5, weight: 504, weightChange: 0, recent: [2, 2, 1, 1, 3], jockeyWinRate: 0.1, age: 5, sex: "牡", burden: 57 },
-      { number: 7, name: "ラピッドゲイル", jockey: "吉原寛人", odds: 25.5, weight: 472, weightChange: 8, recent: [9, 6, 4, 8, 7], jockeyWinRate: 0.08, age: 7, sex: "セ", burden: 56 },
-      { number: 8, name: "ヒカリノトビラ", jockey: "矢野貴之", odds: 9.1, weight: 460, weightChange: -4, recent: [1, 5, 3, 2, 4], jockeyWinRate: 0.15, age: 4, sex: "牝", burden: 54 },
-      { number: 9, name: "ストームエッジ", jockey: "藤本現暉", odds: 15.2, weight: 490, weightChange: 2, recent: [5, 4, 2, 6, 3], jockeyWinRate: 0.07, age: 6, sex: "牡", burden: 56 },
-      { number: 10, name: "ムーンリット", jockey: "西啓太", odds: 42.0, weight: 448, weightChange: -8, recent: [8, 9, 7, 10, 5], jockeyWinRate: 0.06, age: 5, sex: "牝", burden: 54 },
-    ],
-  },
-  {
-    id: "oi-8",
-    venueId: "oi",
-    raceNo: 8,
-    name: "3歳以上C1",
-    date: "2026-09-09",
+    id: "kawasaki-9",
+    venueId: "kawasaki",
+    raceNo: 9,
+    name: "日和風特別",
+    date: TODAY,
     distance: "ダート1400m",
-    className: "C1",
-    condition: "稍重",
+    className: "B3",
+    condition: "不良",
     postTime: "18:55",
-    horses: [
-      { number: 1, name: "アオイマチ", jockey: "和田譲治", odds: 6.2, weight: 470, weightChange: 0, recent: [3, 2, 4, 1, 5], jockeyWinRate: 0.1, age: 4, sex: "牡", burden: 56 },
-      { number: 2, name: "フクデンボス", jockey: "達城龍次", odds: 4.1, weight: 498, weightChange: 6, recent: [1, 3, 2, 2, 1], jockeyWinRate: 0.09, age: 5, sex: "牡", burden: 57 },
-      { number: 3, name: "サザンブリーズ", jockey: "山崎誠士", odds: 11.0, weight: 452, weightChange: -2, recent: [5, 1, 6, 4, 3], jockeyWinRate: 0.11, age: 4, sex: "牝", burden: 54 },
-      { number: 4, name: "テツノイナズマ", jockey: "西村栄治", odds: 7.8, weight: 482, weightChange: 2, recent: [2, 4, 3, 5, 2], jockeyWinRate: 0.08, age: 6, sex: "牡", burden: 56 },
-      { number: 5, name: "キタノダイヤ", jockey: "木村駿也", odds: 22.0, weight: 464, weightChange: 4, recent: [6, 8, 5, 7, 4], jockeyWinRate: 0.07, age: 5, sex: "セ", burden: 56 },
-      { number: 6, name: "レグルスロード", jockey: "野畑凌", odds: 3.6, weight: 490, weightChange: -4, recent: [1, 2, 1, 3, 2], jockeyWinRate: 0.12, age: 4, sex: "牡", burden: 56 },
-      { number: 7, name: "サクラバナ", jockey: "谷内貫太", odds: 14.5, weight: 446, weightChange: 0, recent: [4, 5, 2, 6, 8], jockeyWinRate: 0.09, age: 3, sex: "牝", burden: 53 },
-      { number: 8, name: "ブラックフォール", jockey: "林幻", odds: 9.4, weight: 506, weightChange: 2, recent: [3, 1, 5, 4, 3], jockeyWinRate: 0.1, age: 7, sex: "牡", burden: 57 },
-    ],
+    horses: horses([
+      [1, "ヒヨリカゼ", "町田直希", 6.8, 476, 0, [2, 3, 1, 4, 2], 0.13, 5, "牡", 56],
+      [2, "ナイトブリーズ", "山崎誠士", 4.2, 488, 2, [1, 2, 2, 1, 3], 0.11, 6, "牡", 57],
+      [3, "サクラアラシ", "伊藤裕人", 12.5, 452, -2, [5, 4, 3, 6, 2], 0.08, 4, "牝", 54],
+      [4, "グンバイロード", "今野忠成", 5.6, 494, 4, [3, 1, 4, 2, 1], 0.12, 5, "牡", 56],
+      [5, "ムクゲノカゼ", "森下惇", 18.0, 468, 6, [7, 6, 5, 8, 4], 0.06, 7, "セ", 56],
+      [6, "カワセミフライト", "佐藤翔馬", 8.4, 460, -4, [4, 2, 5, 3, 1], 0.1, 4, "牝", 54],
+      [7, "リョウシュウ", "瀧川寿希也", 3.9, 500, 0, [1, 1, 2, 3, 2], 0.14, 5, "牡", 57],
+      [8, "フクロウトウ", "藤本現暉", 15.2, 482, 2, [6, 5, 4, 7, 3], 0.07, 6, "牡", 56],
+      [9, "ゲキライ", "西村淳也", 22.0, 444, -6, [8, 9, 6, 5, 7], 0.05, 4, "牝", 54],
+      [10, "レックウ", "左海誠二", 9.8, 470, 0, [3, 4, 1, 5, 2], 0.09, 5, "牡", 56],
+    ]),
   },
   {
     id: "kawasaki-10",
     venueId: "kawasaki",
     raceNo: 10,
-    name: "川崎マイラーズ",
-    date: "2026-09-10",
+    name: "涼秋特別",
+    date: TODAY,
     distance: "ダート1600m",
-    className: "A1",
-    condition: "良",
-    postTime: "20:10",
-    horses: [
-      { number: 1, name: "カワセミフライト", jockey: "町田直希", odds: 5.1, weight: 476, weightChange: 0, recent: [2, 1, 3, 2, 4], jockeyWinRate: 0.13, age: 5, sex: "牡", burden: 57 },
-      { number: 2, name: "レッドクラウン", jockey: "山崎誠士", odds: 2.8, weight: 500, weightChange: 2, recent: [1, 1, 1, 2, 1], jockeyWinRate: 0.11, age: 6, sex: "牡", burden: 58 },
-      { number: 3, name: "ミストラルガール", jockey: "伊藤裕人", odds: 16.4, weight: 450, weightChange: -4, recent: [5, 3, 7, 4, 6], jockeyWinRate: 0.08, age: 4, sex: "牝", burden: 54 },
-      { number: 4, name: "タイキフェニックス", jockey: "今野忠成", odds: 7.2, weight: 488, weightChange: 4, recent: [3, 2, 4, 1, 3], jockeyWinRate: 0.12, age: 5, sex: "牡", burden: 56 },
-      { number: 5, name: "サンドストーム", jockey: "森下惇", odds: 28.0, weight: 470, weightChange: 10, recent: [8, 6, 9, 5, 7], jockeyWinRate: 0.06, age: 7, sex: "セ", burden: 56 },
-      { number: 6, name: "ナイトカーニバル", jockey: "佐藤翔馬", odds: 9.8, weight: 462, weightChange: -2, recent: [4, 2, 5, 3, 1], jockeyWinRate: 0.1, age: 4, sex: "牝", burden: 54 },
-      { number: 7, name: "ダイチノキセキ", jockey: "瀧川寿希也", odds: 4.4, weight: 494, weightChange: 0, recent: [1, 3, 2, 1, 2], jockeyWinRate: 0.14, age: 5, sex: "牡", burden: 57 },
-      { number: 8, name: "プラチナアロー", jockey: "藤本現暉", odds: 12.0, weight: 480, weightChange: 2, recent: [6, 4, 1, 5, 3], jockeyWinRate: 0.07, age: 6, sex: "牡", burden: 56 },
-      { number: 9, name: "コスモスプリンター", jockey: "西村淳也", odds: 35.0, weight: 444, weightChange: -6, recent: [9, 7, 8, 10, 6], jockeyWinRate: 0.05, age: 4, sex: "牝", burden: 54 },
-    ],
+    className: "B2",
+    condition: "不良",
+    postTime: "19:30",
+    horses: horses([
+      [1, "アキカゼ", "町田直希", 5.4, 478, 2, [2, 1, 3, 2, 4], 0.13, 5, "牡", 56],
+      [2, "レッドクラウン", "山崎誠士", 2.8, 502, 0, [1, 1, 1, 2, 1], 0.11, 6, "牡", 58],
+      [3, "ミストラルガール", "伊藤裕人", 14.6, 450, -4, [5, 3, 7, 4, 6], 0.08, 4, "牝", 54],
+      [4, "タイキフェニックス", "今野忠成", 7.1, 488, 4, [3, 2, 4, 1, 3], 0.12, 5, "牡", 56],
+      [5, "サンドストーム", "森下惇", 26.0, 470, 10, [8, 6, 9, 5, 7], 0.06, 7, "セ", 56],
+      [6, "ナイトカーニバル", "佐藤翔馬", 9.2, 462, -2, [4, 2, 5, 3, 1], 0.1, 4, "牝", 54],
+      [7, "ダイチノキセキ", "瀧川寿希也", 4.5, 494, 0, [1, 3, 2, 1, 2], 0.14, 5, "牡", 57],
+      [8, "プラチナアロー", "藤本現暉", 11.8, 480, 2, [6, 4, 1, 5, 3], 0.07, 6, "牡", 56],
+      [9, "コスモスプリンター", "西村淳也", 32.0, 444, -6, [9, 7, 8, 10, 6], 0.05, 4, "牝", 54],
+    ]),
   },
   {
-    id: "urawa-9",
-    venueId: "urawa",
-    raceNo: 9,
-    name: "浦和記念トライアル",
-    date: "2026-09-08",
-    distance: "ダート1400m",
-    className: "A2",
-    condition: "良",
-    postTime: "16:20",
-    horses: [
-      { number: 1, name: "ウラワエース", jockey: "見越崇史", odds: 6.8, weight: 484, weightChange: 2, recent: [2, 4, 1, 3, 2], jockeyWinRate: 0.11, age: 5, sex: "牡", burden: 56 },
-      { number: 2, name: "サクラサクラ", jockey: "左海誠二", odds: 3.9, weight: 458, weightChange: 0, recent: [1, 2, 1, 4, 3], jockeyWinRate: 0.13, age: 4, sex: "牝", burden: 54 },
-      { number: 3, name: "サンダーロード", jockey: "繁田健一", odds: 8.5, weight: 502, weightChange: 4, recent: [3, 1, 5, 2, 4], jockeyWinRate: 0.09, age: 6, sex: "牡", burden: 57 },
-      { number: 4, name: "グリーンパレス", jockey: "吉井章", odds: 14.0, weight: 466, weightChange: -2, recent: [5, 6, 3, 4, 7], jockeyWinRate: 0.08, age: 5, sex: "セ", burden: 56 },
-      { number: 5, name: "マキシマム", jockey: "張田昂", odds: 4.7, weight: 490, weightChange: 0, recent: [1, 3, 2, 1, 5], jockeyWinRate: 0.12, age: 5, sex: "牡", burden: 56 },
-      { number: 6, name: "リトルウィング", jockey: "村上忍", odds: 19.5, weight: 442, weightChange: -4, recent: [7, 4, 8, 5, 6], jockeyWinRate: 0.07, age: 3, sex: "牝", burden: 53 },
-      { number: 7, name: "ブラックダイヤ", jockey: "仲野光成", odds: 5.6, weight: 496, weightChange: 6, recent: [2, 2, 3, 1, 2], jockeyWinRate: 0.1, age: 6, sex: "牡", burden: 57 },
-      { number: 8, name: "ハナビノキセキ", jockey: "臼井健太", odds: 11.2, weight: 472, weightChange: 2, recent: [4, 1, 6, 3, 5], jockeyWinRate: 0.09, age: 4, sex: "牝", burden: 54 },
-    ],
-  },
-  {
-    id: "funabashi-11",
-    venueId: "funabashi",
+    id: "kawasaki-11",
+    venueId: "kawasaki",
     raceNo: 11,
-    name: "船橋スプリント",
-    date: "2026-09-11",
-    distance: "ダート1000m",
-    className: "A2",
-    condition: "良",
-    postTime: "20:00",
-    horses: [
-      { number: 1, name: "スピードキング", jockey: "石崎駿", odds: 3.5, weight: 478, weightChange: 0, recent: [1, 1, 2, 1, 3], jockeyWinRate: 0.14, age: 5, sex: "牡", burden: 57 },
-      { number: 2, name: "アカリノユメ", jockey: "本橋孝太", odds: 7.1, weight: 452, weightChange: -2, recent: [3, 2, 4, 1, 5], jockeyWinRate: 0.12, age: 4, sex: "牝", burden: 54 },
-      { number: 3, name: "ドンデンガエシ", jockey: "山口勲", odds: 9.6, weight: 488, weightChange: 4, recent: [2, 5, 3, 4, 2], jockeyWinRate: 0.1, age: 6, sex: "牡", burden: 56 },
-      { number: 4, name: "フラッシュボルト", jockey: "御神本訓", odds: 4.2, weight: 470, weightChange: 2, recent: [1, 3, 1, 2, 1], jockeyWinRate: 0.14, age: 4, sex: "牡", burden: 56 },
-      { number: 5, name: "ユメノトビラ", jockey: "笹川翼", odds: 15.8, weight: 444, weightChange: 0, recent: [6, 4, 7, 5, 3], jockeyWinRate: 0.13, age: 5, sex: "牝", burden: 54 },
-      { number: 6, name: "ワイルドカード", jockey: "真島大輔", odds: 22.0, weight: 510, weightChange: 8, recent: [8, 6, 4, 9, 5], jockeyWinRate: 0.1, age: 7, sex: "セ", burden: 57 },
-      { number: 7, name: "カイザーエッジ", jockey: "吉原寛人", odds: 6.4, weight: 486, weightChange: -4, recent: [2, 1, 4, 3, 2], jockeyWinRate: 0.08, age: 5, sex: "牡", burden: 56 },
-      { number: 8, name: "スターダスト", jockey: "矢野貴之", odds: 12.5, weight: 460, weightChange: 2, recent: [5, 3, 2, 6, 4], jockeyWinRate: 0.15, age: 4, sex: "牝", burden: 54 },
-    ],
+    name: "戸塚記念",
+    date: TODAY,
+    distance: "ダート2100m",
+    className: "S1",
+    condition: "不良",
+    postTime: "20:10",
+    horses: horses([
+      [1, "トヅカキング", "町田直希", 6.2, 492, 0, [2, 1, 3, 2, 1], 0.13, 3, "牡", 56],
+      [2, "カワサキスター", "山崎誠士", 3.5, 508, 2, [1, 1, 2, 1, 2], 0.11, 3, "牡", 57],
+      [3, "ミナミノカゼ", "伊藤裕人", 15.0, 458, -2, [4, 5, 3, 6, 2], 0.08, 3, "牝", 54],
+      [4, "ヨコハマエース", "今野忠成", 5.8, 486, 4, [3, 2, 1, 4, 3], 0.12, 3, "牡", 56],
+      [5, "ナイトメモリー", "森下惇", 22.0, 470, 6, [7, 6, 5, 8, 4], 0.06, 3, "セ", 56],
+      [6, "サクラノトビラ", "佐藤翔馬", 8.6, 452, 0, [2, 4, 1, 3, 5], 0.1, 3, "牝", 54],
+      [7, "ダイチノオウジャ", "瀧川寿希也", 4.1, 500, -2, [1, 2, 1, 2, 1], 0.14, 3, "牡", 57],
+      [8, "ストームエッジ", "藤本現暉", 12.4, 484, 2, [5, 3, 4, 2, 6], 0.07, 3, "牡", 56],
+      [9, "ムーンリット", "西村淳也", 28.0, 446, -4, [8, 7, 9, 5, 6], 0.05, 3, "牝", 54],
+      [10, "ゴールドスパイク", "左海誠二", 9.5, 496, 0, [3, 1, 4, 2, 3], 0.09, 3, "牡", 56],
+    ]),
   },
+
+  // —— 門別（晴・ダート良）——
   {
     id: "monbetsu-7",
     venueId: "monbetsu",
     raceNo: 7,
-    name: "3歳未勝利",
-    date: "2026-09-07",
+    name: "プレセペ特別",
+    date: TODAY,
     distance: "ダート1200m",
-    className: "未勝利",
-    condition: "稍重",
-    postTime: "14:40",
-    horses: [
-      { number: 1, name: "ホッカイドウ", jockey: "服部茂史", odds: 5.4, weight: 468, weightChange: 0, recent: [3, 2, 4, 5, 0], jockeyWinRate: 0.12, age: 3, sex: "牡", burden: 56 },
-      { number: 2, name: "キタノサクラ", jockey: "石川倭", odds: 8.8, weight: 440, weightChange: -2, recent: [4, 6, 3, 5, 0], jockeyWinRate: 0.1, age: 3, sex: "牝", burden: 54 },
-      { number: 3, name: "サッポロナイト", jockey: "岩橋勇二", odds: 3.1, weight: 476, weightChange: 4, recent: [2, 1, 2, 3, 0], jockeyWinRate: 0.11, age: 3, sex: "牡", burden: 56 },
-      { number: 4, name: "ラブリーウィン", jockey: "宮崎光行", odds: 12.0, weight: 452, weightChange: 2, recent: [5, 4, 7, 6, 0], jockeyWinRate: 0.09, age: 3, sex: "牝", burden: 54 },
-      { number: 5, name: "ブレイブハート", jockey: "阿部龍", odds: 6.7, weight: 484, weightChange: 0, recent: [1, 3, 5, 2, 0], jockeyWinRate: 0.08, age: 3, sex: "牡", burden: 56 },
-      { number: 6, name: "スノーフレーク", jockey: "落林頼親", odds: 18.5, weight: 436, weightChange: -6, recent: [7, 8, 5, 9, 0], jockeyWinRate: 0.07, age: 3, sex: "牝", burden: 54 },
-      { number: 7, name: "タイセインパクト", jockey: "濱中俊", odds: 4.9, weight: 490, weightChange: 2, recent: [2, 2, 1, 4, 0], jockeyWinRate: 0.13, age: 3, sex: "牡", burden: 56 },
-      { number: 8, name: "モエレスピリット", jockey: "五十嵐冬樹", odds: 15.0, weight: 462, weightChange: 6, recent: [6, 5, 4, 8, 0], jockeyWinRate: 0.1, age: 3, sex: "セ", burden: 56 },
-    ],
-  },
-  {
-    id: "morioka-10",
-    venueId: "morioka",
-    raceNo: 10,
-    name: "マイルチャンピオンシップ南部杯トライアル",
-    date: "2026-09-06",
-    distance: "ダート1600m",
-    className: "オープン",
+    className: "C1",
     condition: "良",
-    postTime: "15:50",
-    horses: [
-      { number: 1, name: "イワテサンダー", jockey: "村上忍", odds: 7.5, weight: 492, weightChange: 0, recent: [2, 3, 1, 4, 2], jockeyWinRate: 0.11, age: 5, sex: "牡", burden: 57 },
-      { number: 2, name: "トウホクスター", jockey: "山本政聡", odds: 3.4, weight: 506, weightChange: 2, recent: [1, 1, 2, 1, 3], jockeyWinRate: 0.14, age: 6, sex: "牡", burden: 58 },
-      { number: 3, name: "アオモリウィンド", jockey: "高橋悠里", odds: 11.8, weight: 458, weightChange: -2, recent: [4, 2, 5, 3, 6], jockeyWinRate: 0.09, age: 4, sex: "牝", burden: 54 },
-      { number: 4, name: "ミナミノカゼ", jockey: "坂口裕一", odds: 5.9, weight: 480, weightChange: 4, recent: [3, 1, 3, 2, 1], jockeyWinRate: 0.1, age: 5, sex: "牡", burden: 56 },
-      { number: 5, name: "キリフダ", jockey: "菅原辰徳", odds: 16.0, weight: 470, weightChange: 0, recent: [6, 5, 4, 7, 3], jockeyWinRate: 0.08, age: 7, sex: "セ", burden: 56 },
-      { number: 6, name: "ハクオウ", jockey: "高松亮", odds: 8.2, weight: 464, weightChange: -4, recent: [1, 4, 2, 5, 4], jockeyWinRate: 0.12, age: 4, sex: "牝", burden: 54 },
-      { number: 7, name: "ダイチノオウジャ", jockey: "岩本怜", odds: 4.6, weight: 498, weightChange: 2, recent: [2, 2, 1, 1, 2], jockeyWinRate: 0.13, age: 5, sex: "牡", burden: 57 },
-      { number: 8, name: "オーロラビーム", jockey: "鈴木祐", odds: 24.0, weight: 446, weightChange: 8, recent: [8, 7, 6, 9, 5], jockeyWinRate: 0.06, age: 4, sex: "牝", burden: 54 },
-    ],
+    postTime: "17:30",
+    horses: horses([
+      [1, "ホッカイドウ", "服部茂史", 5.2, 468, 0, [3, 2, 4, 1, 5], 0.12, 4, "牡", 56],
+      [2, "キタノサクラ", "石川倭", 8.8, 440, -2, [4, 6, 3, 5, 2], 0.1, 4, "牝", 54],
+      [3, "サッポロナイト", "岩橋勇二", 3.4, 476, 4, [2, 1, 2, 3, 1], 0.11, 5, "牡", 56],
+      [4, "ラブリーウィン", "宮崎光行", 12.0, 452, 2, [5, 4, 7, 6, 3], 0.09, 4, "牝", 54],
+      [5, "ブレイブハート", "阿部龍", 6.7, 484, 0, [1, 3, 5, 2, 4], 0.08, 5, "牡", 56],
+      [6, "スノーフレーク", "落林頼親", 18.5, 436, -6, [7, 8, 5, 9, 4], 0.07, 4, "牝", 54],
+      [7, "タイセインパクト", "濱中俊", 4.6, 490, 2, [2, 2, 1, 4, 1], 0.13, 4, "牡", 56],
+      [8, "モエレスピリット", "五十嵐冬樹", 14.0, 462, 6, [6, 5, 4, 8, 3], 0.1, 5, "セ", 56],
+    ]),
   },
   {
-    id: "sonoda-11",
-    venueId: "sonoda",
-    raceNo: 11,
-    name: "兵庫チャンピオンシップ",
-    date: "2026-09-10",
-    distance: "ダート1400m",
-    className: "重賞",
-    condition: "良",
-    postTime: "16:00",
-    horses: [
-      { number: 1, name: "ヒョウゴキング", jockey: "下原理", odds: 4.8, weight: 486, weightChange: 0, recent: [1, 2, 1, 3, 2], jockeyWinRate: 0.12, age: 4, sex: "牡", burden: 56 },
-      { number: 2, name: "オサカフラッシュ", jockey: "田中学", odds: 6.2, weight: 472, weightChange: 2, recent: [3, 1, 4, 2, 1], jockeyWinRate: 0.11, age: 5, sex: "牡", burden: 56 },
-      { number: 3, name: "キョウトビューティ", jockey: "廣瀬航", odds: 13.5, weight: 448, weightChange: -2, recent: [5, 4, 2, 6, 3], jockeyWinRate: 0.09, age: 4, sex: "牝", burden: 54 },
-      { number: 4, name: "ナリタカイザー", jockey: "吉村智洋", odds: 3.2, weight: 500, weightChange: 4, recent: [1, 1, 2, 1, 1], jockeyWinRate: 0.15, age: 5, sex: "牡", burden: 57 },
-      { number: 5, name: "セトウチ", jockey: "大山龍太郎", odds: 18.0, weight: 460, weightChange: 0, recent: [7, 5, 6, 4, 8], jockeyWinRate: 0.07, age: 6, sex: "セ", burden: 56 },
-      { number: 6, name: "サクラガワ", jockey: "松木大地", odds: 9.1, weight: 454, weightChange: -4, recent: [2, 3, 5, 1, 4], jockeyWinRate: 0.1, age: 4, sex: "牝", burden: 54 },
-      { number: 7, name: "タイガーアイ", jockey: "鴨宮祥行", odds: 7.4, weight: 490, weightChange: 2, recent: [4, 2, 1, 3, 2], jockeyWinRate: 0.1, age: 5, sex: "牡", burden: 56 },
-      { number: 8, name: "ミラクルラン", jockey: "長尾達也", odds: 21.0, weight: 466, weightChange: 6, recent: [6, 8, 4, 7, 5], jockeyWinRate: 0.08, age: 7, sex: "牡", burden: 56 },
-      { number: 9, name: "ヒカリノミチ", jockey: "渡邊雄太", odds: 11.0, weight: 442, weightChange: 0, recent: [3, 5, 2, 4, 6], jockeyWinRate: 0.09, age: 3, sex: "牝", burden: 53 },
-    ],
-  },
-  {
-    id: "kochi-9",
-    venueId: "kochi",
-    raceNo: 9,
-    name: "夜さ恋特別",
-    date: "2026-09-09",
-    distance: "ダート1300m",
-    className: "A",
-    condition: "稍重",
-    postTime: "20:15",
-    horses: [
-      { number: 1, name: "ヨサコイスター", jockey: "赤岡修次", odds: 3.8, weight: 482, weightChange: 0, recent: [1, 2, 1, 1, 3], jockeyWinRate: 0.16, age: 5, sex: "牡", burden: 57 },
-      { number: 2, name: "シマントリバー", jockey: "永森大智", odds: 6.5, weight: 468, weightChange: 2, recent: [2, 3, 4, 1, 2], jockeyWinRate: 0.12, age: 4, sex: "牡", burden: 56 },
-      { number: 3, name: "トサノヒメ", jockey: "宮川実", odds: 10.2, weight: 446, weightChange: -2, recent: [4, 1, 5, 3, 6], jockeyWinRate: 0.11, age: 4, sex: "牝", burden: 54 },
-      { number: 4, name: "クロシオ", jockey: "畑中信司", odds: 5.1, weight: 494, weightChange: 4, recent: [1, 3, 2, 2, 1], jockeyWinRate: 0.1, age: 6, sex: "牡", burden: 57 },
-      { number: 5, name: "ナンコクナイト", jockey: "岡村卓弥", odds: 14.8, weight: 470, weightChange: 0, recent: [5, 6, 3, 7, 4], jockeyWinRate: 0.08, age: 5, sex: "セ", burden: 56 },
-      { number: 6, name: "サクライロ", jockey: "西川敏弘", odds: 8.7, weight: 450, weightChange: -4, recent: [3, 2, 5, 4, 1], jockeyWinRate: 0.09, age: 5, sex: "牝", burden: 54 },
-      { number: 7, name: "ドラゴンテイル", jockey: "倉兼仁", odds: 12.0, weight: 486, weightChange: 6, recent: [6, 4, 2, 5, 3], jockeyWinRate: 0.07, age: 7, sex: "牡", burden: 56 },
-      { number: 8, name: "ムーンビーム", jockey: "木村直輝", odds: 19.5, weight: 438, weightChange: 2, recent: [7, 5, 8, 6, 4], jockeyWinRate: 0.06, age: 3, sex: "牝", burden: 53 },
-    ],
-  },
-  {
-    id: "saga-8",
-    venueId: "saga",
+    id: "monbetsu-8",
+    venueId: "monbetsu",
     raceNo: 8,
-    name: "佐賀ヴィーナスカップ",
-    date: "2026-09-05",
-    distance: "ダート1400m",
-    className: "重賞",
+    name: "クンツァイト特別",
+    date: TODAY,
+    distance: "ダート1700m",
+    className: "2歳オープン",
     condition: "良",
-    postTime: "15:20",
-    horses: [
-      { number: 1, name: "サガンビューティ", jockey: "山下裕貴", odds: 4.3, weight: 454, weightChange: 0, recent: [1, 2, 1, 3, 2], jockeyWinRate: 0.12, age: 4, sex: "牝", burden: 55 },
-      { number: 2, name: "キュウシュウガール", jockey: "田中直人", odds: 6.9, weight: 448, weightChange: -2, recent: [3, 1, 4, 2, 5], jockeyWinRate: 0.1, age: 5, sex: "牝", burden: 55 },
-      { number: 3, name: "ハカタノカゼ", jockey: "山口勲", odds: 8.1, weight: 460, weightChange: 2, recent: [2, 4, 3, 1, 4], jockeyWinRate: 0.11, age: 4, sex: "牝", burden: 55 },
-      { number: 4, name: "サクラヒメ", jockey: "吉本智", odds: 3.6, weight: 442, weightChange: 0, recent: [1, 1, 2, 1, 3], jockeyWinRate: 0.13, age: 4, sex: "牝", burden: 55 },
-      { number: 5, name: "ニシノファンタジー", jockey: "竹吉徹", odds: 15.0, weight: 436, weightChange: -4, recent: [5, 6, 4, 7, 3], jockeyWinRate: 0.08, age: 5, sex: "牝", burden: 55 },
-      { number: 6, name: "ムーンライト", jockey: "出水拓人", odds: 11.4, weight: 450, weightChange: 4, recent: [4, 2, 5, 3, 6], jockeyWinRate: 0.09, age: 3, sex: "牝", burden: 53 },
-      { number: 7, name: "レディーストーム", jockey: "川島拓", odds: 7.2, weight: 466, weightChange: 2, recent: [2, 3, 1, 4, 2], jockeyWinRate: 0.1, age: 6, sex: "牝", burden: 55 },
-      { number: 8, name: "フクオカスター", jockey: "飛田愛斗", odds: 18.8, weight: 444, weightChange: 0, recent: [6, 5, 7, 4, 8], jockeyWinRate: 0.07, age: 5, sex: "牝", burden: 55 },
-    ],
+    postTime: "18:05",
+    horses: horses([
+      [1, "クンツァイト", "服部茂史", 4.8, 460, 0, [1, 2, 1, 3, 0], 0.12, 2, "牡", 55],
+      [2, "ホッカイドウガール", "石川倭", 7.5, 438, 2, [2, 3, 4, 1, 0], 0.1, 2, "牝", 54],
+      [3, "ヤングジェネ", "岩橋勇二", 3.2, 472, 4, [1, 1, 2, 2, 0], 0.11, 2, "牡", 55],
+      [4, "プレセペスター", "宮崎光行", 9.6, 448, -2, [3, 5, 2, 4, 0], 0.09, 2, "牝", 54],
+      [5, "イシカリノカゼ", "阿部龍", 11.0, 466, 0, [4, 2, 5, 3, 0], 0.08, 2, "牡", 55],
+      [6, "グランシャリオ", "濱中俊", 5.5, 480, 2, [2, 1, 3, 1, 0], 0.13, 2, "牡", 55],
+      [7, "ニイカップ", "五十嵐冬樹", 16.0, 444, 6, [5, 4, 6, 7, 0], 0.1, 2, "セ", 55],
+    ]),
   },
   {
-    id: "obihiro-10",
-    venueId: "obihiro",
+    id: "monbetsu-12",
+    venueId: "monbetsu",
+    raceNo: 12,
+    name: "ヤングジェネレーションカップ",
+    date: TODAY,
+    distance: "ダート1800m",
+    className: "A1〜A4",
+    condition: "良",
+    postTime: "20:35",
+    horses: horses([
+      [1, "ヤングキング", "服部茂史", 3.8, 492, 0, [1, 2, 1, 1, 3], 0.12, 5, "牡", 57],
+      [2, "ジェネレーション", "石川倭", 5.6, 478, 2, [2, 1, 3, 2, 2], 0.1, 6, "牡", 56],
+      [3, "カップノホシ", "岩橋勇二", 4.4, 486, -2, [1, 3, 2, 1, 4], 0.11, 5, "牡", 57],
+      [4, "モンベツエース", "宮崎光行", 8.2, 470, 4, [4, 2, 5, 3, 1], 0.09, 7, "セ", 56],
+      [5, "ホッカイドウオウ", "濱中俊", 6.0, 500, 0, [3, 1, 2, 4, 2], 0.13, 5, "牡", 57],
+    ]),
+  },
+
+  // —— 笠松 ——
+  {
+    id: "kasamatsu-4",
+    venueId: "kasamatsu",
+    raceNo: 4,
+    name: "新月特別",
+    date: TODAY,
+    distance: "ダート1400m",
+    className: "2歳特別",
+    condition: "良",
+    postTime: "13:35",
+    horses: horses([
+      [1, "シンゲツ", "塚本征吾", 4.5, 450, 0, [1, 2, 3, 0, 0], 0.11, 2, "牡", 55],
+      [2, "カサマツガール", "深澤杏花", 6.8, 432, -2, [2, 4, 1, 0, 0], 0.09, 2, "牝", 54],
+      [3, "シャッターチャンス", "阿部基嗣", 5.2, 458, 2, [3, 1, 2, 0, 0], 0.1, 2, "牡", 55],
+      [4, "ビッグバンビチャン", "明星晴士", 8.4, 444, 0, [4, 3, 5, 0, 0], 0.08, 2, "牡", 55],
+      [5, "ナインシンフォニー", "加藤聡一", 3.9, 462, 4, [1, 1, 2, 0, 0], 0.12, 2, "牡", 56],
+      [6, "ルナクエーサー", "大原浩司", 11.0, 436, -4, [5, 2, 4, 0, 0], 0.07, 2, "牝", 54],
+      [7, "マシロクン", "高木健太", 9.5, 470, 2, [2, 5, 3, 0, 0], 0.09, 2, "牡", 55],
+    ]),
+  },
+  {
+    id: "kasamatsu-9",
+    venueId: "kasamatsu",
+    raceNo: 9,
+    name: "夜長月特別",
+    date: TODAY,
+    distance: "ダート1580m",
+    className: "C1-2",
+    condition: "良",
+    postTime: "16:25",
+    horses: horses([
+      [1, "ヨナガツキ", "塚本征吾", 5.1, 472, 0, [2, 1, 3, 4, 2], 0.11, 5, "牡", 56],
+      [2, "イロドリヅキ", "筒井勇介", 4.0, 458, 2, [1, 2, 1, 3, 1], 0.1, 4, "牝", 54],
+      [3, "ホソクテジュク", "渡邊竜也", 7.8, 486, -2, [3, 4, 2, 5, 1], 0.09, 6, "牡", 56],
+      [4, "カサマツブレイズ", "藤原幹生", 6.4, 470, 4, [4, 1, 5, 2, 3], 0.08, 5, "牡", 56],
+      [5, "ナイトロング", "明星晴士", 12.5, 452, 0, [6, 5, 4, 7, 3], 0.07, 7, "セ", 56],
+      [6, "ムーンセレナーデ", "大原浩司", 9.2, 444, -4, [5, 3, 2, 6, 4], 0.1, 4, "牝", 54],
+      [7, "シンフォニーロード", "加藤聡一", 3.6, 490, 2, [1, 1, 2, 1, 2], 0.12, 5, "牡", 57],
+      [8, "ギフノカゼ", "高木健太", 14.0, 466, 6, [7, 4, 6, 5, 8], 0.09, 6, "牡", 56],
+    ]),
+  },
+  {
+    id: "kasamatsu-10",
+    venueId: "kasamatsu",
     raceNo: 10,
-    name: "ばんえい十勝特別",
-    date: "2026-09-08",
-    distance: "ばんえい200m",
-    className: "オープン",
-    condition: "重",
-    postTime: "16:00",
-    horses: [
-      { number: 1, name: "オホーツクキング", jockey: "藤野俊一", odds: 4.1, weight: 980, weightChange: 0, recent: [1, 2, 1, 3, 2], jockeyWinRate: 0.14, age: 7, sex: "牡", burden: 0 },
-      { number: 2, name: "トカチパワー", jockey: "鈴木恵介", odds: 5.6, weight: 1020, weightChange: 10, recent: [2, 1, 3, 2, 1], jockeyWinRate: 0.12, age: 8, sex: "牡", burden: 0 },
-      { number: 3, name: "キタノタイタン", jockey: "阿部武臣", odds: 7.8, weight: 995, weightChange: -5, recent: [3, 4, 2, 5, 1], jockeyWinRate: 0.1, age: 6, sex: "牡", burden: 0 },
-      { number: 4, name: "ホクレンエース", jockey: "島津新", odds: 3.5, weight: 1010, weightChange: 5, recent: [1, 1, 2, 1, 3], jockeyWinRate: 0.15, age: 7, sex: "牡", burden: 0 },
-      { number: 5, name: "バンエイスター", jockey: "松田道明", odds: 12.0, weight: 970, weightChange: 0, recent: [5, 3, 6, 4, 2], jockeyWinRate: 0.09, age: 9, sex: "セ", burden: 0 },
-      { number: 6, name: "ダイチノチカラ", jockey: "西康志", odds: 9.4, weight: 1005, weightChange: 15, recent: [4, 2, 4, 3, 5], jockeyWinRate: 0.11, age: 6, sex: "牡", burden: 0 },
-      { number: 7, name: "スノーブリザード", jockey: "長澤幸太", odds: 16.5, weight: 960, weightChange: -10, recent: [6, 5, 7, 4, 8], jockeyWinRate: 0.08, age: 8, sex: "牡", burden: 0 },
-      { number: 8, name: "ホッカイドウオウ", jockey: "渡来心悟", odds: 6.8, weight: 990, weightChange: 0, recent: [2, 3, 1, 2, 4], jockeyWinRate: 0.1, age: 7, sex: "牡", burden: 0 },
-    ],
+    name: "色取月特別",
+    date: TODAY,
+    distance: "ダート1400m",
+    className: "C1-1",
+    condition: "良",
+    postTime: "16:55",
+    horses: horses([
+      [1, "イロドリエース", "塚本征吾", 4.7, 480, 0, [1, 3, 2, 1, 4], 0.11, 5, "牡", 56],
+      [2, "アキノイロ", "筒井勇介", 6.1, 454, -2, [2, 1, 4, 3, 2], 0.1, 4, "牝", 54],
+      [3, "カサマツキング", "渡邊竜也", 3.8, 496, 2, [1, 2, 1, 2, 1], 0.09, 6, "牡", 57],
+      [4, "ツキノヒカリ", "藤原幹生", 10.5, 462, 4, [5, 4, 3, 6, 2], 0.08, 5, "牝", 54],
+      [5, "ナガツキロード", "加藤聡一", 8.0, 474, 0, [3, 2, 5, 1, 4], 0.12, 5, "牡", 56],
+      [6, "ギフフラッシュ", "高木健太", 12.8, 448, -6, [6, 7, 4, 5, 8], 0.09, 7, "セ", 56],
+      [7, "セレナーデナイト", "大原浩司", 5.5, 468, 2, [2, 3, 1, 4, 1], 0.1, 4, "牝", 54],
+      [8, "ホソクテスター", "明星晴士", 15.0, 488, 6, [4, 5, 6, 3, 7], 0.07, 6, "牡", 56],
+    ]),
+  },
+
+  // —— 園田 ——
+  {
+    id: "sonoda-9",
+    venueId: "sonoda",
+    raceNo: 9,
+    name: "初秋特別",
+    date: TODAY,
+    distance: "ダート1400m",
+    className: "B2",
+    condition: "良",
+    postTime: "16:05",
+    horses: horses([
+      [1, "ハツアキ", "下原理", 5.0, 482, 0, [2, 1, 3, 2, 1], 0.12, 5, "牡", 56],
+      [2, "ソナダフラッシュ", "田中学", 6.4, 470, 2, [3, 2, 1, 4, 2], 0.11, 5, "牡", 56],
+      [3, "アキカゼガール", "廣瀬航", 11.5, 448, -2, [5, 4, 2, 6, 3], 0.09, 4, "牝", 54],
+      [4, "ヒョウゴキング", "吉村智洋", 3.3, 500, 4, [1, 1, 2, 1, 1], 0.15, 5, "牡", 57],
+      [5, "セトウチ", "大山龍太郎", 16.0, 460, 0, [7, 5, 6, 4, 8], 0.07, 6, "セ", 56],
+      [6, "サクラガワ", "松木大地", 8.8, 454, -4, [2, 3, 5, 1, 4], 0.1, 4, "牝", 54],
+      [7, "タイガーアイ", "鴨宮祥行", 7.2, 490, 2, [4, 2, 1, 3, 2], 0.1, 5, "牡", 56],
+      [8, "ミラクルラン", "長尾達也", 19.0, 466, 6, [6, 8, 4, 7, 5], 0.08, 7, "牡", 56],
+      [9, "ヒカリノミチ", "渡邊雄太", 10.2, 442, 0, [3, 5, 2, 4, 6], 0.09, 3, "牝", 53],
+    ]),
+  },
+  {
+    id: "sonoda-10",
+    venueId: "sonoda",
+    raceNo: 10,
+    name: "C1特別",
+    date: TODAY,
+    distance: "ダート1400m",
+    className: "C1",
+    condition: "良",
+    postTime: "16:40",
+    horses: horses([
+      [1, "ソナダエース", "下原理", 4.6, 478, 0, [1, 2, 3, 1, 4], 0.12, 4, "牡", 56],
+      [2, "オサカフラッシュ", "田中学", 6.0, 468, 2, [3, 1, 2, 4, 1], 0.11, 5, "牡", 56],
+      [3, "キョウトビューティ", "廣瀬航", 12.0, 446, -2, [5, 4, 6, 3, 2], 0.09, 4, "牝", 54],
+      [4, "ナリタカイザー", "吉村智洋", 3.5, 498, 0, [1, 1, 1, 2, 2], 0.15, 5, "牡", 57],
+      [5, "バンプロード", "大山龍太郎", 14.5, 472, 4, [6, 5, 4, 7, 3], 0.07, 6, "セ", 56],
+      [6, "ヒカリノトビラ", "松木大地", 8.1, 450, -4, [2, 3, 1, 5, 4], 0.1, 4, "牝", 54],
+      [7, "タイガーロード", "鴨宮祥行", 7.0, 486, 2, [4, 2, 3, 1, 2], 0.1, 5, "牡", 56],
+      [8, "ウイングスター", "長尾達也", 18.0, 464, 6, [7, 6, 8, 5, 4], 0.08, 7, "牡", 56],
+    ]),
+  },
+  {
+    id: "sonoda-1",
+    venueId: "sonoda",
+    raceNo: 1,
+    name: "C3三",
+    date: TODAY,
+    distance: "ダート1400m",
+    className: "C3",
+    condition: "良",
+    postTime: "11:10",
+    horses: horses([
+      [1, "テーオーモンブラン", "南部楓", 8.5, 460, 0, [4, 5, 3, 6, 2], 0.08, 4, "牝", 52],
+      [2, "ビップピュアエース", "大山真", 4.2, 478, 2, [2, 1, 3, 2, 1], 0.1, 5, "牡", 55],
+      [3, "ベイサルシュート", "佐々世", 11.0, 452, -2, [5, 6, 4, 7, 3], 0.07, 4, "牡", 53],
+      [4, "シュタイナー", "高畑皓", 3.6, 490, 0, [1, 2, 1, 3, 2], 0.12, 5, "牡", 57],
+      [5, "カムフラージュ", "笹田知", 9.4, 466, 4, [3, 4, 5, 2, 6], 0.09, 5, "牝", 55],
+      [6, "タイキクロニクル", "永井孝", 5.8, 484, 2, [2, 3, 1, 4, 1], 0.11, 6, "牡", 57],
+      [7, "アイアンムーン", "松木大", 7.2, 472, 0, [4, 1, 5, 3, 2], 0.1, 5, "牡", 57],
+      [8, "ジョイブラック", "小谷哲", 14.0, 448, -4, [6, 7, 4, 8, 5], 0.08, 4, "牝", 54],
+      [9, "ラロワイヤル", "長尾翼", 6.5, 496, 6, [1, 4, 2, 3, 4], 0.09, 6, "牡", 57],
+      [10, "ダズリングアイス", "塩津璃", 18.5, 440, 0, [8, 5, 7, 6, 9], 0.06, 3, "牝", 51],
+    ]),
   },
 ];
 
@@ -285,9 +343,15 @@ export function getVenue(venueId) {
 }
 
 export function getRacesByVenue(venueId) {
-  return RACES.filter((r) => r.venueId === venueId);
+  return RACES.filter((r) => r.venueId === venueId).sort(
+    (a, b) => a.raceNo - b.raceNo
+  );
 }
 
 export function getRace(raceId) {
   return RACES.find((r) => r.id === raceId) ?? null;
+}
+
+export function getHoldingDateLabel() {
+  return "2026/09/09";
 }

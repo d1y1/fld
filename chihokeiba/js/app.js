@@ -91,7 +91,7 @@ function renderRaces(venueId) {
     btn.innerHTML = `
       <div class="race-card__row">
         <h3 class="race-card__name"><span class="race-card__no">${race.raceNo}R</span>${escapeHtml(race.name)}</h3>
-        <span class="race-card__time">${escapeHtml(race.postTime)}</span>
+        <span class="race-card__time">${escapeHtml(formatRaceDate(race.date))}<br>${escapeHtml(race.postTime)}</span>
       </div>
       <p class="race-card__meta">${escapeHtml(race.distance)} · ${escapeHtml(race.className)} · 馬場${escapeHtml(race.condition)} · ${race.horses.length}頭</p>
     `;
@@ -107,7 +107,7 @@ function selectRace(raceId) {
   const race = getRace(raceId);
   const venue = getVenue(race.venueId);
   els.raceHeading.textContent = `${race.raceNo}R ${race.name}`;
-  els.raceMeta.textContent = `${venue.name} · ${race.distance} · ${race.className} · 馬場${race.condition} · 発走 ${race.postTime}`;
+  els.raceMeta.textContent = `${formatRaceDate(race.date)} · ${venue.name} · ${race.distance} · ${race.className} · 馬場${race.condition} · 発走 ${race.postTime}`;
   renderEntries(race);
   showView("race");
 }
@@ -161,10 +161,9 @@ async function onPredict() {
 
 function renderResult(race, venue, prediction) {
   const { ranked, tickets, summary } = prediction;
-  const maxScore = ranked[0]?.score ?? 1;
 
   els.resultSummary.innerHTML = `
-    <p class="result-hero__tone">${escapeHtml(summary.tone)} · ${escapeHtml(venue.name)} ${race.raceNo}R</p>
+    <p class="result-hero__tone">${escapeHtml(summary.tone)} · ${escapeHtml(formatRaceDate(race.date))} · ${escapeHtml(venue.name)} ${race.raceNo}R</p>
     <h2 class="result-hero__title">${escapeHtml(summary.headline)}</h2>
     <p class="result-hero__detail">${escapeHtml(summary.detail)}</p>
   `;
@@ -173,22 +172,22 @@ function renderResult(race, venue, prediction) {
   ranked.forEach((row, index) => {
     const li = document.createElement("li");
     li.className = "rank-item";
-    const width = Math.max(8, Math.round((row.score / maxScore) * 100));
-    const winPct = (row.winProb * 100).toFixed(1);
+    const top3Pct = (row.top3Prob * 100).toFixed(1);
+    const meterWidth = Math.max(8, Math.round(row.top3Prob * 100));
     li.innerHTML = `
       <div class="rank-item__head">
         <span class="rank-item__place">${index + 1}</span>
         <span class="rank-item__num">${row.horse.number}</span>
         <div>
           <p class="rank-item__name">${escapeHtml(row.horse.name)}</p>
-          <p class="rank-item__meta">${escapeHtml(row.horse.jockey)} · オッズ ${row.horse.odds.toFixed(1)} · 信頼度${row.confidence}</p>
+          <p class="rank-item__meta">${escapeHtml(row.horse.jockey)} · オッズ ${row.horse.odds.toFixed(1)} · 信頼度${row.confidence} · スコア ${row.score.toFixed(1)}</p>
         </div>
         <div class="rank-item__score">
-          <strong>${row.score.toFixed(1)}</strong>
-          <span>勝率目安 ${winPct}%</span>
+          <strong>${top3Pct}%</strong>
+          <span>3着内確率</span>
         </div>
       </div>
-      <div class="meter" aria-hidden="true"><span style="width:${width}%"></span></div>
+      <div class="meter" aria-hidden="true"><span style="width:${meterWidth}%"></span></div>
       <div class="breakdown">
         <div class="breakdown__cell"><strong>${row.breakdown.form}</strong><span>近走</span></div>
         <div class="breakdown__cell"><strong>${row.breakdown.odds}</strong><span>人気</span></div>
@@ -223,11 +222,11 @@ async function onShare() {
   if (!race || !venue || !prediction) return;
 
   const top = prediction.ranked.slice(0, 3)
-    .map((r, i) => `${i + 1}. ${r.horse.number}番 ${r.horse.name} (${r.score.toFixed(1)})`)
+    .map((r, i) => `${i + 1}. ${r.horse.number}番 ${r.horse.name}（3着内 ${(r.top3Prob * 100).toFixed(1)}%）`)
     .join("\n");
 
   const text = [
-    `【地方競馬予測】${venue.name} ${race.raceNo}R ${race.name}`,
+    `【地方競馬予測】${formatRaceDate(race.date)} ${venue.name} ${race.raceNo}R ${race.name}`,
     prediction.summary.headline,
     top,
     "",
@@ -304,6 +303,19 @@ function formatForm(recent) {
   return recent
     .map((n) => (n > 0 ? String(n) : "-"))
     .join("-");
+}
+
+/** @param {string} isoDate YYYY-MM-DD */
+function formatRaceDate(isoDate) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  if (!match) return isoDate;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const weekday = ["日", "月", "火", "水", "木", "金", "土"][
+    new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+  ];
+  return `${month}月${day}日（${weekday}）`;
 }
 
 function formatWeightChange(change) {

@@ -1,6 +1,7 @@
 /**
  * 地方競馬デモ用の簡易スコアリングエンジン。
- * 単勝オッズ・直近成績・騎手勝率・馬体重増減・枠順を合成して勝率推定を出します。
+ * 単勝オッズ・直近成績・騎手勝率・馬体重増減・枠順を合成し、
+ * 勝率と 3 着以内確率（Harville 近似）を推定します。
  */
 
 /**
@@ -57,11 +58,16 @@ export function predictRace(race, opts = {}) {
     winProb: Math.exp(((s.score / max) * 4.2) - 4.2),
   }));
   const sum = softened.reduce((acc, s) => acc + s.winProb, 0);
+  const withWin = softened.map((s) => ({
+    ...s,
+    winProb: s.winProb / sum,
+  }));
+  const top3Probs = estimateTop3Probs(withWin.map((s) => s.winProb));
 
-  const ranked = softened
-    .map((s) => ({
+  const ranked = withWin
+    .map((s, i) => ({
       ...s,
-      winProb: s.winProb / sum,
+      top3Prob: top3Probs[i],
       confidence: confidenceLabel(s.score, max, fieldSize),
     }))
     .sort((a, b) => b.score - a.score || a.horse.odds - b.horse.odds);
@@ -203,9 +209,64 @@ function buildSummary(ranked, race) {
       : "評価不能",
     detail: `${race.name}は${tone}。上位は ${ranked
       .slice(0, 3)
-      .map((r) => `${r.horse.number}番`)
+      .map((r) => `${r.horse.number}番（3着内${(r.top3Prob * 100).toFixed(0)}%）`)
       .join("・")} の順。`,
   };
+}
+
+/**
+ * Harville 近似で各馬の 1・2・3 着確率を求め、3 着以内確率にする。
+ * 合計は理論上 3（3 枠分）になる。
+ * @param {number[]} winProbs
+ * @returns {number[]}
+ */
+function estimateTop3Probs(winProbs) {
+  const n = winProbs.length;
+  if (n === 0) return [];
+  if (n === 1) return [1];
+  if (n === 2) {
+    // 2 頭立てでは両方とも 2 着以内確定
+    return winProbs.map(() => 1);
+  }
+
+  const eps = 1e-12;
+  /** @type {number[]} */
+  const top3 = new Array(n).fill(0);
+
+  for (let i = 0; i < n; i++) {
+    const pWin = winProbs[i];
+    let pSecond = 0;
+    let pThird = 0;
+
+    for (let j = 0; j < n; j++) {
+      if (j === i) continue;
+      const denom1 = 1 - winProbs[j];
+      if (denom1 <= eps) continue;
+      pSecond += winProbs[j] * (pWin / denom1);
+
+      for (let k = 0; k < n; k++) {
+        if (k === i || k === j) continue;
+        const denom2 = 1 - winProbs[j] - winProbs[k];
+        if (denom2 <= eps) continue;
+        pThird +=
+          winProbs[j] * (winProbs[k] / denom1) * (pWin / denom2);
+      }
+    }
+
+    top3[i] = pWin + pSecond + pThird;
+  }
+
+  // 丸め誤差で合計が 3 からズレた場合はスケール補正
+  const total = top3.reduce((a, b) => a + b, 0);
+  const expected = Math.min(3, n);
+  if (total > eps) {
+    const scale = expected / total;
+    for (let i = 0; i < n; i++) {
+      top3[i] = clamp(top3[i] * scale, 0, 1);
+    }
+  }
+
+  return top3;
 }
 
 /**
